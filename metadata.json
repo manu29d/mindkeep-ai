@@ -1,0 +1,5 @@
+{
+  "name": "MindKeep AI",
+  "description": "A Google Keep-inspired smart to-do application with Gemini AI integration for task breakdown, category planning, and natural language insights.",
+  "requestFramePermissions": []
+}
