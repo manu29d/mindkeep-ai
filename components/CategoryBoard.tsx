@@ -20,7 +20,7 @@ const CategoryColumn: React.FC<{
   onTodoClick: (todo: Todo) => void;
   onEditCategory: (cat: Category) => void;
 }> = ({ category, todos, onAddTodo, onTodoClick, onEditCategory }) => {
-  const { moveTodo, updateCategory, deleteCategory, addPhase } = useTodo();
+  const { moveTodo, updateCategory, deleteCategory, addPhase, teams } = useTodo();
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showPhaseInput, setShowPhaseInput] = useState(false);
   const [newPhaseTitle, setNewPhaseTitle] = useState('');
@@ -28,6 +28,8 @@ const CategoryColumn: React.FC<{
   // Inline Editing States
   const [editingCatDeadline, setEditingCatDeadline] = useState(false);
   const [editingPhaseDeadline, setEditingPhaseDeadline] = useState<string | null>(null); // phaseId
+
+  const team = teams.find(t => t.id === category.teamId);
 
   const handleDrop = (e: React.DragEvent, targetPhaseId?: string) => {
     e.preventDefault();
@@ -88,6 +90,11 @@ const CategoryColumn: React.FC<{
     >
       {/* Header */}
       <div className="flex flex-col mb-4 group">
+        {team && (
+            <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1 px-1">
+                {team.name}
+            </div>
+        )}
         <div className="flex items-center justify-between">
             <h2 className="font-bold text-gray-800 dark:text-gray-100 text-lg px-1 truncate cursor-pointer" onClick={() => onEditCategory(category)}>
               {category.title}
@@ -270,7 +277,7 @@ const CategoryBoard: React.FC<{ onTodoClick: (t: Todo) => void; onEditCategory: 
   // 2. Filter Categories by Search Query (Keep category if it matches query)
   const filteredCategories = categories.filter(c => {
       // Team Filter
-      const matchesTeam = activeTeamId ? c.teamId === activeTeamId : !c.teamId;
+      const matchesTeam = activeTeamId ? c.teamId === activeTeamId : true;
       if (!matchesTeam) return false;
 
       // Search Filter: If search query matches category title, keep it even if no todos match.
