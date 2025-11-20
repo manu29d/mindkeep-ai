@@ -70,7 +70,7 @@ export default function SignIn() {
 
         <div className="mt-6 text-center">
           <p className="text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/auth/signup" className="text-blue-600 hover:underline font-medium">
               Sign up
             </Link>
@@ -82,6 +82,7 @@ export default function SignIn() {
                 onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
                 className="w-full flex items-center justify-center bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium py-3 rounded-lg transition-colors"
             >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="h-5 w-5 mr-2" alt="Google" />
                 Sign in with Google
             </button>

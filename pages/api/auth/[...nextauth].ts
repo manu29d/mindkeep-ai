@@ -50,7 +50,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.tier = (user as any).tier;
+        token.tier = user.tier;
       } else if (token.id) {
         // Fetch latest tier from DB to ensure updates are reflected
         const u = await prisma.user.findUnique({ where: { id: token.id as string } });

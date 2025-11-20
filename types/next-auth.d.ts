@@ -8,4 +8,9 @@ declare module "next-auth" {
       tier: SubscriptionTier
     } & DefaultSession["user"]
   }
+
+  interface User {
+    id: string
+    tier: SubscriptionTier
+  }
 }
