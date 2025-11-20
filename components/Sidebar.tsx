@@ -11,14 +11,13 @@ import {
   Users,
   Moon,
   Sun,
-  Loader2,
   Activity
 } from 'lucide-react';
 
 const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onManageTeams: () => void }> = ({ onOpenChat, onNewCategory, onManageTeams }) => {
   const { viewMode, setViewMode, isDarkMode, toggleDarkMode, teams, activeTeamId, setActiveTeamId } = useTodo();
 
-  const NavItem = ({ mode, icon: Icon, label }: { mode: ViewMode; icon: any; label: string }) => (
+  const NavItem = ({ mode, icon: Icon, label }: { mode: ViewMode; icon: React.ElementType; label: string }) => (
     <button
       onClick={() => {
         setViewMode(mode);

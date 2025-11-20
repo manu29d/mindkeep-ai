@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Category, Todo, ViewMode, Phase } from '../types';
+import { Category, Todo, ViewMode } from '../types';
 import { useTodo } from '../context/TodoContext';
 import TodoItem from './TodoItem';
-import { Plus, MoreHorizontal, Palette, Trash, Calendar, Layers, Edit2, Paperclip, FolderPen } from 'lucide-react';
+import { Plus, MoreHorizontal, Trash, Calendar, Layers, Edit2, Paperclip, FolderPen } from 'lucide-react';
 
 const formatDate = (isoString?: string) => {
   if (!isoString) return '';

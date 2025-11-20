@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Todo, TimerState } from '../types';
 import { useTodo } from '../context/TodoContext';
 import { 
-  Play, Pause, Square, Bot, Clock, MoreVertical, 
+  Play, Pause, Square, Bot, 
   Calendar as CalendarIcon, Trash2, UserPlus, Paperclip
 } from 'lucide-react';
 
