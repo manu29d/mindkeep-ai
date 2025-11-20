@@ -1,6 +1,7 @@
 import React from 'react';
 import { ViewMode } from '../types';
 import { useTodo } from '../context/TodoContext';
+import { useFeatureGate } from '../hooks/useFeatureGate';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -11,22 +12,18 @@ import {
   Users,
   Moon,
   Sun,
-  Activity
+  Activity,
+  Lock
 } from 'lucide-react';
 
 const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onManageTeams: () => void }> = ({ onOpenChat, onNewCategory, onManageTeams }) => {
   const { viewMode, setViewMode, isDarkMode, toggleDarkMode, teams, activeTeamId, setActiveTeamId } = useTodo();
+  const { canAccessTeams } = useFeatureGate();
 
   const NavItem = ({ mode, icon: Icon, label }: { mode: ViewMode; icon: React.ElementType; label: string }) => (
     <button
       onClick={() => {
         setViewMode(mode);
-        // If clicking a main nav item (other than specific team views handling below), 
-        // we might want to keep the team context or reset it. 
-        // Usually "All Notes" implies resetting to personal or default. 
-        // "Today" etc usually applies to the CURRENT context (Team or Personal).
-        // For simplicity, "All Notes" resets to Personal Board. 
-        // Specialized views preserve the activeTeamId filter.
         if (mode === ViewMode.BOARD) {
            setActiveTeamId(null);
         }
@@ -65,30 +62,42 @@ const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onM
         <NavItem mode={ViewMode.UNSPECIFIED} icon={HelpCircle} label="Unscheduled" />
         <NavItem mode={ViewMode.COMPLETED} icon={CheckCircle} label="Completed" />
         
-        <div className="mt-8 px-4 flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-          <span>Teams</span>
-          <button onClick={onManageTeams} className="hover:text-indigo-500 p-1">
-            <Plus size={14} />
-          </button>
-        </div>
-        {teams.map(team => (
-          <button 
-            key={team.id} 
-            onClick={() => {
-                setActiveTeamId(team.id);
-                setViewMode(ViewMode.BOARD);
-            }}
-            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-r-full transition-colors mb-1
-                ${activeTeamId === team.id 
-                    ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-100 font-medium' 
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
-          >
-            <Users size={18} />
-            <span className="truncate">{team.name}</span>
-          </button>
-        ))}
-        {teams.length === 0 && (
-            <div className="px-4 text-xs text-gray-400 italic">No teams yet</div>
+        {canAccessTeams ? (
+          <>
+            <div className="mt-8 px-4 flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              <span>Teams</span>
+              <button onClick={onManageTeams} className="hover:text-indigo-500 p-1">
+                <Plus size={14} />
+              </button>
+            </div>
+            {teams.map(team => (
+              <button 
+                key={team.id} 
+                onClick={() => {
+                    setActiveTeamId(team.id);
+                    setViewMode(ViewMode.BOARD);
+                }}
+                className={`w-full flex items-center space-x-3 px-4 py-2 rounded-r-full transition-colors mb-1
+                    ${activeTeamId === team.id 
+                        ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-100 font-medium' 
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              >
+                <Users size={18} />
+                <span className="truncate">{team.name}</span>
+              </button>
+            ))}
+            {teams.length === 0 && (
+                <div className="px-4 text-xs text-gray-400 italic">No teams yet</div>
+            )}
+          </>
+        ) : (
+          <div className="mt-8 px-4">
+             <div className="flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                <span>Teams</span>
+                <Lock size={12} />
+             </div>
+             <div className="text-xs text-gray-400 italic">Upgrade to Enterprise</div>
+          </div>
         )}
       </nav>
 

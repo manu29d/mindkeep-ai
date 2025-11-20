@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import useSWR, { mutate } from 'swr';
 import { Todo, Category, ViewMode, TimerState, Phase, Team } from '../types';
 import { generateSubTodos, generateCategoryPlan } from '../services/geminiService';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface TodoContextType {
   todos: Todo[];
@@ -8,6 +11,7 @@ interface TodoContextType {
   teams: Team[];
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
+  isLoading: boolean;
   
   // Search & Filter
   searchQuery: string;
@@ -46,56 +50,20 @@ interface TodoContextType {
 
 const TodoContext = createContext<TodoContextType | undefined>(undefined);
 
-// Mock Initial Data
-const INITIAL_CATEGORIES: Category[] = [
-  { 
-    id: 'c1', 
-    title: 'Work Projects', 
-    color: 'bg-blue-100 dark:bg-blue-900/40', 
-    collaboratorIds: [],
-    phases: [
-      { id: 'p1', title: 'Q1 Planning', deadline: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString() }
-    ],
-    attachments: []
-  },
-  { id: 'c2', title: 'Personal', color: 'bg-green-100 dark:bg-green-900/40', collaboratorIds: [], attachments: [] },
-  { id: 'c3', title: 'Urgent', color: 'bg-red-100 dark:bg-red-900/40', collaboratorIds: [], attachments: [] },
-];
-
-const INITIAL_TEAMS: Team[] = [
-  {
-    id: 'team1',
-    name: 'Marketing',
-    members: [
-      { id: 'm1', name: 'Jane Doe', role: 'Lead', avatar: 'JD' },
-      { id: 'm2', name: 'John Smith', role: 'Designer', avatar: 'JS' }
-    ]
-  }
-];
-
-const INITIAL_TODOS: Todo[] = [
-  {
-    id: 't1', categoryId: 'c1', phaseId: 'p1', title: 'Prepare Q3 Report', completed: false, createdAt: Date.now(),
-    timeSpent: 0, timerState: TimerState.IDLE, subTodos: [], assigneeIds: [], attachments: [],
-    deadline: new Date().toISOString()
-  },
-  {
-    id: 't2', categoryId: 'c2', title: 'Buy Groceries', completed: false, createdAt: Date.now(),
-    timeSpent: 120, timerState: TimerState.IDLE, subTodos: [], assigneeIds: [], attachments: [],
-    deadline: new Date().toISOString()
-  }
-];
-
 export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [todos, setTodos] = useState<Todo[]>(INITIAL_TODOS);
-  const [teams, setTeams] = useState<Team[]>(INITIAL_TEAMS);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.BOARD);
   const [isDarkMode, setIsDarkMode] = useState(false);
   
   // Filter State
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // SWR Data Fetching
+  const { data: categories = [], error: catError } = useSWR<Category[]>('/api/categories', fetcher);
+  const { data: todos = [], error: todoError } = useSWR<Todo[]>('/api/todos', fetcher);
+  const { data: teams = [], error: teamError } = useSWR<Team[]>('/api/teams', fetcher);
+
+  const isLoading = (!categories && !catError) || (!todos && !todoError) || (!teams && !teamError);
 
   // Handle Dark Mode Class on HTML element
   useEffect(() => {
@@ -111,140 +79,181 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Timer Ticker
   useEffect(() => {
     const interval = setInterval(() => {
-      setTodos(currentTodos => 
-        currentTodos.map(todo => {
+      mutate('/api/todos', (currentTodos: Todo[] | undefined) => {
+        if (!currentTodos) return [];
+        return currentTodos.map(todo => {
           if (todo.timerState === TimerState.RUNNING) {
-            return { ...todo, timeSpent: todo.timeSpent + 1 };
+            return { ...todo, timeSpent: (todo.timeSpent || 0) + 1 };
           }
           return todo;
-        })
-      );
+        });
+      }, false);
     }, 1000);
     return () => clearInterval(interval);
   }, []);
 
   const addCategory = async (title: string, color: string, description?: string, deadline?: string, teamId?: string) => {
-    const newCat: Category = {
-      id: crypto.randomUUID(),
-      title,
-      color,
-      description,
-      collaboratorIds: [],
-      deadline,
-      phases: [],
-      attachments: [],
-      teamId: teamId || (activeTeamId || undefined)
-    };
-    setCategories(prev => [...prev, newCat]);
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, color, description, deadline, teamId })
+      });
+      if (!res.ok) throw new Error('Failed to create category');
+      const newCat = await res.json();
+      mutate('/api/categories');
 
-    if (description && description.trim().length > 0) {
-       // AI Generation for new category
-       const generatedTitles = await generateCategoryPlan(title, description);
-       const defaultDeadline = deadline || new Date().toISOString();
-
-       const newTodos = generatedTitles.map(t => ({
-         id: crypto.randomUUID(),
-         categoryId: newCat.id,
-         title: t,
-         completed: false,
-         createdAt: Date.now(),
-         timeSpent: 0,
-         timerState: TimerState.IDLE,
-         subTodos: [],
-         assigneeIds: [],
-         attachments: [],
-         deadline: defaultDeadline
-       }));
-       setTodos(prev => [...prev, ...newTodos]);
+      if (description && description.trim().length > 0) {
+         // AI Generation for new category
+         const generatedTitles = await generateCategoryPlan(title, description);
+         
+         for (const t of generatedTitles) {
+            await addTodo(newCat.id, t);
+         }
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const addPhase = (categoryId: string, title: string, deadline?: string) => {
-    const newPhase: Phase = { id: crypto.randomUUID(), title, deadline };
-    setCategories(prev => prev.map(c => {
-      if (c.id === categoryId) {
-        return { ...c, phases: [...(c.phases || []), newPhase] };
-      }
-      return c;
-    }));
+  const addPhase = async (categoryId: string, title: string, deadline?: string) => {
+    try {
+      const res = await fetch(`/api/categories/${categoryId}/phases`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, deadline })
+      });
+      if (!res.ok) throw new Error('Failed to create phase');
+      mutate('/api/categories');
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const deleteCategory = (id: string) => {
-    setCategories(prev => prev.filter(c => c.id !== id));
-    setTodos(prev => prev.filter(t => t.categoryId !== id));
+  const deleteCategory = async (id: string) => {
+    try {
+      mutate('/api/categories', (categories: Category[] | undefined) => categories?.filter(c => c.id !== id), false);
+      mutate('/api/todos', (todos: Todo[] | undefined) => todos?.filter(t => t.categoryId !== id), false);
+
+      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete category');
+      
+      mutate('/api/categories');
+      mutate('/api/todos');
+    } catch (error) {
+      console.error(error);
+      mutate('/api/categories');
+      mutate('/api/todos');
+    }
   };
 
-  const updateCategory = (id: string, updates: Partial<Category>) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  const updateCategory = async (id: string, updates: Partial<Category>) => {
+    try {
+      mutate('/api/categories', (categories: Category[] | undefined) => 
+        categories?.map(c => c.id === id ? { ...c, ...updates } : c), false);
+
+      const res = await fetch(`/api/categories/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!res.ok) throw new Error('Failed to update category');
+      
+      mutate('/api/categories');
+    } catch (error) {
+      console.error(error);
+      mutate('/api/categories');
+    }
   };
   
   const moveCategory = (fromIndex: number, toIndex: number) => {
-    setCategories(prev => {
-      const newCats = [...prev];
+    // Local only for now as backend doesn't support ordering
+    mutate('/api/categories', (categories: Category[] | undefined) => {
+      if (!categories) return [];
+      const newCats = [...categories];
       const [moved] = newCats.splice(fromIndex, 1);
       newCats.splice(toIndex, 0, moved);
       return newCats;
-    });
+    }, false);
   };
 
-  const addTodo = (categoryId: string, title: string, phaseId?: string) => {
-    const category = categories.find(c => c.id === categoryId);
-    
-    // Default deadline logic: Copy from category deadline if it exists, else today.
-    let deadline = category?.deadline;
-    if (!deadline) {
-        const today = new Date();
-        deadline = today.toISOString();
-    }
-
-    const newTodo: Todo = {
-      id: crypto.randomUUID(),
-      categoryId,
-      phaseId,
-      title,
-      completed: false,
-      createdAt: Date.now(),
-      timeSpent: 0,
-      timerState: TimerState.IDLE,
-      subTodos: [],
-      assigneeIds: [],
-      attachments: [],
-      deadline // Set derived deadline
-    };
-    setTodos(prev => [...prev, newTodo]);
-  };
-
-  const updateTodo = (id: string, updates: Partial<Todo>) => {
-    setTodos(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  };
-
-  const deleteTodo = (id: string) => {
-    setTodos(prev => prev.filter(t => t.id !== id));
-  };
-
-  const moveTodo = (todoId: string, targetCategoryId: string, targetPhaseId?: string) => {
-    setTodos(prev => prev.map(t => t.id === todoId ? { ...t, categoryId: targetCategoryId, phaseId: targetPhaseId } : t));
-  };
-
-  const toggleTimer = (todoId: string) => {
-    setTodos(prev => prev.map(t => {
-      if (t.id !== todoId) return t;
-      
-      // Allow starting from IDLE, PAUSED, or STOPPED (if re-opened)
-      if (t.timerState === TimerState.IDLE || t.timerState === TimerState.PAUSED || t.timerState === TimerState.STOPPED) {
-        return { ...t, timerState: TimerState.RUNNING, lastStartedAt: Date.now() };
-      } else if (t.timerState === TimerState.RUNNING) {
-        return { ...t, timerState: TimerState.PAUSED };
+  const addTodo = async (categoryId: string, title: string, phaseId?: string) => {
+    try {
+      const category = categories.find(c => c.id === categoryId);
+      let deadline = category?.deadline;
+      if (!deadline) {
+          const today = new Date();
+          deadline = today.toISOString();
       }
-      return t;
-    }));
+
+      const res = await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryId, title, phaseId, deadline })
+      });
+      if (!res.ok) throw new Error('Failed to create todo');
+      
+      mutate('/api/todos');
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const stopTimer = (todoId: string) => {
-    setTodos(prev => prev.map(t => {
-      if (t.id !== todoId) return t;
-      return { ...t, timerState: TimerState.STOPPED, completed: true, completedAt: Date.now() };
-    }));
+  const updateTodo = async (id: string, updates: Partial<Todo>) => {
+    try {
+      // Optimistic update
+      mutate('/api/todos', (todos: Todo[] | undefined) => 
+        todos?.map(t => t.id === id ? { ...t, ...updates } : t), false);
+
+      const res = await fetch(`/api/todos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!res.ok) throw new Error('Failed to update todo');
+      
+      mutate('/api/todos');
+    } catch (error) {
+      console.error(error);
+      mutate('/api/todos');
+    }
+  };
+
+  const deleteTodo = async (id: string) => {
+    try {
+      mutate('/api/todos', (todos: Todo[] | undefined) => todos?.filter(t => t.id !== id), false);
+
+      const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete todo');
+      
+      mutate('/api/todos');
+    } catch (error) {
+      console.error(error);
+      mutate('/api/todos');
+    }
+  };
+
+  const moveTodo = async (todoId: string, targetCategoryId: string, targetPhaseId?: string) => {
+    await updateTodo(todoId, { categoryId: targetCategoryId, phaseId: targetPhaseId });
+  };
+
+  const toggleTimer = async (todoId: string) => {
+    const todo = todos.find(t => t.id === todoId);
+    if (!todo) return;
+
+    let updates: Partial<Todo> = {};
+    
+    if (todo.timerState === TimerState.IDLE || todo.timerState === TimerState.PAUSED || todo.timerState === TimerState.STOPPED) {
+      updates = { timerState: TimerState.RUNNING, lastStartedAt: Date.now() };
+    } else if (todo.timerState === TimerState.RUNNING) {
+      updates = { timerState: TimerState.PAUSED };
+    }
+    
+    await updateTodo(todoId, updates);
+  };
+
+  const stopTimer = async (todoId: string) => {
+    await updateTodo(todoId, { timerState: TimerState.STOPPED, completed: true, completedAt: Date.now() });
   };
 
   const enrichTodoWithAI = async (todoId: string) => {
@@ -252,33 +261,54 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!todo) return;
     
     const subtasks = await generateSubTodos(todo.title, todo.description);
-    const subTodoObjects = subtasks.map(st => ({
-      id: crypto.randomUUID(),
-      title: st,
-      completed: false
-    }));
-
-    updateTodo(todoId, { subTodos: [...todo.subTodos, ...subTodoObjects] });
+    
+    for (const st of subtasks) {
+      try {
+        await fetch(`/api/todos/${todoId}/subtodos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: st })
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    mutate('/api/todos');
   };
 
-  const addTeam = (name: string) => {
-    const newTeam: Team = {
-      id: crypto.randomUUID(),
-      name,
-      members: []
-    };
-    setTeams(prev => [...prev, newTeam]);
+  const addTeam = async (name: string) => {
+    try {
+      const res = await fetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      if (!res.ok) throw new Error('Failed to create team');
+      mutate('/api/teams');
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const addTeamMember = (teamId: string, name: string, role: string) => {
-    const member: any = { id: crypto.randomUUID(), name, role, avatar: name.substring(0, 2).toUpperCase() };
-    setTeams(prev => prev.map(t => t.id === teamId ? { ...t, members: [...t.members, member] } : t));
+  const addTeamMember = async (teamId: string, name: string, role: string) => {
+    try {
+      const res = await fetch(`/api/teams/${teamId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: name, role })
+      });
+      if (!res.ok) throw new Error('Failed to add team member');
+      
+      mutate('/api/teams');
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
     <TodoContext.Provider value={{
       todos, categories, teams, viewMode, setViewMode,
-      isDarkMode, toggleDarkMode,
+      isDarkMode, toggleDarkMode, isLoading,
       searchQuery, setSearchQuery, activeTeamId, setActiveTeamId,
       addCategory, deleteCategory, updateCategory, moveCategory, addPhase,
       addTodo, updateTodo, deleteTodo, moveTodo,

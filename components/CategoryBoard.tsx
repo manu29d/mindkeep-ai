@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Category, Todo, ViewMode } from '../types';
 import { useTodo } from '../context/TodoContext';
+import { useFeatureGate } from '../hooks/useFeatureGate';
 import TodoItem from './TodoItem';
 import { Plus, MoreHorizontal, Trash, Calendar, Layers, Edit2, Paperclip, FolderPen } from 'lucide-react';
 
@@ -21,6 +22,7 @@ const CategoryColumn: React.FC<{
   onEditCategory: (cat: Category) => void;
 }> = ({ category, todos, onAddTodo, onTodoClick, onEditCategory }) => {
   const { moveTodo, updateCategory, deleteCategory, addPhase, teams } = useTodo();
+  const { canAccessPhases } = useFeatureGate();
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showPhaseInput, setShowPhaseInput] = useState(false);
   const [newPhaseTitle, setNewPhaseTitle] = useState('');
@@ -127,12 +129,14 @@ const CategoryColumn: React.FC<{
                         ))}
                         </div>
                         <hr className="my-2 dark:border-gray-700" />
-                        <button 
-                            onClick={() => { setShowPhaseInput(true); setShowColorPicker(false); }}
-                            className="w-full flex items-center space-x-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded text-sm">
-                            <Layers size={14} />
-                            <span>Add Phase</span>
-                        </button>
+                        {canAccessPhases && (
+                            <button 
+                                onClick={() => { setShowPhaseInput(true); setShowColorPicker(false); }}
+                                className="w-full flex items-center space-x-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded text-sm">
+                                <Layers size={14} />
+                                <span>Add Phase</span>
+                            </button>
+                        )}
                         <button 
                             onClick={() => { onEditCategory(category); setShowColorPicker(false); }}
                             className="w-full flex items-center space-x-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded text-sm">

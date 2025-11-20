@@ -64,6 +64,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  password      String?
   tier          SubscriptionTier @default(FREE)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

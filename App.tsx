@@ -5,7 +5,8 @@ import CategoryBoard from './components/CategoryBoard';
 import AIChat from './components/AIChat';
 import { Todo, Category, Attachment } from './types';
 import { useTodo } from './context/TodoContext';
-import { X, Calendar, Clock, CheckSquare, Trash2, Bot, Plus, Sparkles, Check, Paperclip, File, Link as LinkIcon, User, UploadCloud, ArrowUpRight } from 'lucide-react';
+import { useFeatureGate } from './hooks/useFeatureGate';
+import { X, Calendar, Clock, CheckSquare, Trash2, Bot, Plus, Sparkles, Check, Paperclip, File, Link as LinkIcon, User, UploadCloud, ArrowUpRight, Lock } from 'lucide-react';
 
 // Helper date format
 const formatDate = (isoString?: string) => {
@@ -123,6 +124,7 @@ const AttachmentsList: React.FC<{
 
 const TodoDetailModal: React.FC<{ todoId: string; onClose: () => void; onOpenCategory: (cat: Category) => void }> = ({ todoId, onClose, onOpenCategory }) => {
   const { todos, updateTodo, deleteTodo, enrichTodoWithAI, categories } = useTodo();
+  const { canAccessAI } = useFeatureGate();
   
   const todo = todos.find(t => t.id === todoId);
   const [title, setTitle] = useState(todo?.title || '');
@@ -245,13 +247,20 @@ const TodoDetailModal: React.FC<{ todoId: string; onClose: () => void; onOpenCat
           <div>
              <div className="flex items-center justify-between mb-2">
                <label className="block text-xs font-semibold text-gray-400 uppercase">Sub-tasks</label>
-               <button 
-                 onClick={handleEnrich}
-                 disabled={aiLoading}
-                 className="flex items-center space-x-1 text-xs text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30 px-2 py-1 rounded transition-colors">
-                 <Bot size={12} />
-                 <span>{aiLoading ? 'Generating...' : 'Auto-Breakdown'}</span>
-               </button>
+               {canAccessAI ? (
+                 <button 
+                   onClick={handleEnrich}
+                   disabled={aiLoading}
+                   className="flex items-center space-x-1 text-xs text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30 px-2 py-1 rounded transition-colors">
+                   <Bot size={12} />
+                   <span>{aiLoading ? 'Generating...' : 'Auto-Breakdown'}</span>
+                 </button>
+               ) : (
+                 <div className="flex items-center space-x-1 text-xs text-gray-400 px-2 py-1">
+                    <Lock size={10} />
+                    <span>AI Breakdown (Premium)</span>
+                 </div>
+               )}
              </div>
              
              <div className="space-y-2 mb-3">
@@ -354,6 +363,7 @@ const TodoDetailModal: React.FC<{ todoId: string; onClose: () => void; onOpenCat
 
 const CategoryDetailModal: React.FC<{ category: Category; onClose: () => void }> = ({ category, onClose }) => {
     const { updateCategory, teams } = useTodo();
+    const { canAccessTeams } = useFeatureGate();
     const [title, setTitle] = useState(category.title);
     const [desc, setDesc] = useState(category.description || '');
     const [assignedTeam, setAssignedTeam] = useState(category.teamId || '');
@@ -392,19 +402,21 @@ const CategoryDetailModal: React.FC<{ category: Category; onClose: () => void }>
                     </div>
                     
                     {/* Team Assignment */}
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Assigned Team</label>
-                        <select 
-                            value={assignedTeam}
-                            onChange={(e) => setAssignedTeam(e.target.value)}
-                            className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        >
-                            <option value="">Personal (No Team)</option>
-                            {teams.map(team => (
-                                <option key={team.id} value={team.id}>{team.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {canAccessTeams && (
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Assigned Team</label>
+                            <select 
+                                value={assignedTeam}
+                                onChange={(e) => setAssignedTeam(e.target.value)}
+                                className="w-full p-2 border rounded bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            >
+                                <option value="">Personal (No Team)</option>
+                                {teams.map(team => (
+                                    <option key={team.id} value={team.id}>{team.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <AttachmentsList 
                         attachments={category.attachments || []}
@@ -522,6 +534,7 @@ const TeamsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
 const NewCategoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { addCategory, teams, activeTeamId } = useTodo();
+  const { canAccessTeams, canAccessAI } = useFeatureGate();
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [deadline, setDeadline] = useState('');
@@ -559,34 +572,46 @@ const NewCategoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         onChange={(e) => setDeadline(e.target.value)}
                     />
                 </div>
-                <div>
-                    <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Assign to Team</label>
-                    <select 
-                        value={selectedTeam}
-                        onChange={(e) => setSelectedTeam(e.target.value)}
-                        className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                         <option value="">Personal (No Team)</option>
-                         {teams.map(team => (
-                             <option key={team.id} value={team.id}>{team.name}</option>
-                         ))}
-                    </select>
-                </div>
+                {canAccessTeams && (
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-400 uppercase mb-1">Assign to Team</label>
+                        <select 
+                            value={selectedTeam}
+                            onChange={(e) => setSelectedTeam(e.target.value)}
+                            className="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        >
+                             <option value="">Personal (No Team)</option>
+                             {teams.map(team => (
+                                 <option key={team.id} value={team.id}>{team.name}</option>
+                             ))}
+                        </select>
+                    </div>
+                )}
             </div>
 
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
-            <div className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-400 mb-2 font-medium text-sm">
-                <Sparkles size={16} />
-                <span>AI Auto-Plan</span>
-            </div>
-            <textarea 
-                className="w-full p-3 border border-indigo-100 dark:border-indigo-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
-                placeholder="Describe the project (e.g., 'Plan a launch party for 50 people'). AI will generate initial tasks."
-                rows={3}
-                value={desc}
-                onChange={(e) => setDesc(e.target.value)}
-            />
-            </div>
+            {canAccessAI ? (
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
+                <div className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-400 mb-2 font-medium text-sm">
+                    <Sparkles size={16} />
+                    <span>AI Auto-Plan</span>
+                </div>
+                <textarea 
+                    className="w-full p-3 border border-indigo-100 dark:border-indigo-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
+                    placeholder="Describe the project (e.g., 'Plan a launch party for 50 people'). AI will generate initial tasks."
+                    rows={3}
+                    value={desc}
+                    onChange={(e) => setDesc(e.target.value)}
+                />
+                </div>
+            ) : (
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 opacity-75">
+                    <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 mb-2 font-medium text-sm">
+                        <Lock size={16} />
+                        <span>AI Auto-Plan (Premium)</span>
+                    </div>
+                    <p className="text-xs text-gray-400">Upgrade to Premium to automatically generate tasks for your projects.</p>
+                </div>
+            )}
         </div>
 
         <div className="flex justify-end space-x-3 mt-6">
@@ -605,12 +630,20 @@ const NewCategoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 };
 
 const App: React.FC = () => {
-  const { searchQuery, setSearchQuery } = useTodo();
+  const { searchQuery, setSearchQuery, isLoading } = useTodo();
   const [chatOpen, setChatOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [teamsModalOpen, setTeamsModalOpen] = useState(false);
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
