@@ -9,6 +9,7 @@ interface TodoContextType {
   todos: Todo[];
   categories: Category[];
   teams: Team[];
+  invitations: Invitation[];
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
   isLoading: boolean;
@@ -44,6 +45,9 @@ interface TodoContextType {
   addTeam: (name: string) => void;
   addTeamMember: (teamId: string, name: string, role: string) => void;
 
+  // Invitation Actions
+  respondToInvitation: (invitationId: string, action: 'accept' | 'reject') => void;
+
   // AI Actions
   enrichTodoWithAI: (todoId: string) => Promise<void>;
 }
@@ -59,11 +63,17 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [searchQuery, setSearchQuery] = useState('');
 
   // SWR Data Fetching
-  const { data: categories = [], error: catError } = useSWR<Category[]>('/api/categories', fetcher);
-  const { data: todos = [], error: todoError } = useSWR<Todo[]>('/api/todos', fetcher);
-  const { data: teams = [], error: teamError } = useSWR<Team[]>('/api/teams', fetcher);
+  const { data: categoriesData, error: catError } = useSWR<Category[]>('/api/categories', fetcher);
+  const { data: todosData, error: todoError } = useSWR<Todo[]>('/api/todos', fetcher);
+  const { data: teamsData, error: teamError } = useSWR<Team[]>('/api/teams', fetcher);
+  const { data: invitationsData, error: invError } = useSWR<Invitation[]>('/api/invitations', fetcher);
 
-  const isLoading = (!categories && !catError) || (!todos && !todoError) || (!teams && !teamError);
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
+  const todos = Array.isArray(todosData) ? todosData : [];
+  const teams = Array.isArray(teamsData) ? teamsData : [];
+  const invitations = Array.isArray(invitationsData) ? invitationsData : [];
+
+  const isLoading = (!categoriesData && !catError) || (!todosData && !todoError) || (!teamsData && !teamError) || (!invitationsData && !invError);
 
   // Handle Dark Mode Class on HTML element
   useEffect(() => {
@@ -290,16 +300,16 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const addTeamMember = async (teamId: string, name: string, role: string) => {
+  const respondToInvitation = async (invitationId: string, action: 'accept' | 'reject') => {
     try {
-      const res = await fetch(`/api/teams/${teamId}/members`, {
+      const res = await fetch(`/api/invitations/${invitationId}/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: name, role })
+        body: JSON.stringify({ action })
       });
-      if (!res.ok) throw new Error('Failed to add team member');
-      
-      mutate('/api/teams');
+      if (!res.ok) throw new Error('Failed to respond');
+      mutate('/api/invitations');
+      mutate('/api/todos');
     } catch (error) {
       console.error(error);
     }
@@ -307,12 +317,12 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <TodoContext.Provider value={{
-      todos, categories, teams, viewMode, setViewMode,
+      todos, categories, teams, invitations, viewMode, setViewMode,
       isDarkMode, toggleDarkMode, isLoading,
       searchQuery, setSearchQuery, activeTeamId, setActiveTeamId,
       addCategory, deleteCategory, updateCategory, moveCategory, addPhase,
       addTodo, updateTodo, deleteTodo, moveTodo,
-      toggleTimer, stopTimer, enrichTodoWithAI,
+      toggleTimer, stopTimer, respondToInvitation, enrichTodoWithAI,
       addTeam, addTeamMember
     }}>
       {children}

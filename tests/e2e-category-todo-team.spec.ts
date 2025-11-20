@@ -14,14 +14,17 @@ test.describe('MindKeep AI End-to-End', () => {
         // Sign up flow
         await page.goto(`${BASE_URL}/auth/signup`);
         const uniqueId = Date.now();
-        const email = `test${uniqueId}@example.com`;
-        await page.getByLabel('Full Name').fill(`Test User ${uniqueId}`);
-        await page.getByLabel('Email').fill(email);
-        await page.getByLabel('Password').fill('password123');
+        // Use incremental integer for email suffix
+        const emailCounter = (global as any).__testEmailCounter || 1;
+        (global as any).__testEmailCounter = emailCounter + 1;
+        const email = `test${emailCounter}@example.com`;
+        await page.getByPlaceholder('Full Name').fill(`Test User ${uniqueId}`);
+        await page.getByPlaceholder('Email').fill(email);
+        await page.getByPlaceholder('Password').fill('password123');
         await page.getByRole('button', { name: /sign up/i }).click();
         
         // Wait for redirection to dashboard
-        await expect(page).toHaveURL(`${BASE_URL}/dashboard`);
+        await page.waitForURL(`${BASE_URL}/dashboard`);
 
         // Upgrade user to ENTERPRISE to enable all features
         await prisma.user.update({

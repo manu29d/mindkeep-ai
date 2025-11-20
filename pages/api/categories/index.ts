@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const { title, color, description } = req.body;
+    const { title, color, description, deadline } = req.body;
     if (!title) return res.status(400).json({ error: "Title is required" });
 
     const category = await prisma.category.create({
@@ -29,6 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         title,
         color: color || "bg-white",
         description,
+        deadline: deadline ? new Date(deadline) : null,
         ownerId: session.user.id
       }
     });

@@ -2,6 +2,7 @@ import React from 'react';
 import { ViewMode } from '../types';
 import { useTodo } from '../context/TodoContext';
 import { useFeatureGate } from '../hooks/useFeatureGate';
+import InvitationsList from './InvitationsList';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -100,6 +101,8 @@ const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onM
           </div>
         )}
       </nav>
+
+      <InvitationsList />
 
       <div className="p-4 space-y-2 border-t dark:border-gray-800">
          <button 

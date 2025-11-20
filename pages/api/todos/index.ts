@@ -24,7 +24,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where,
       include: { subTodos: true, attachments: true }
     });
-    return res.status(200).json(todos);
+    
+    const serializedTodos = todos.map(todo => ({
+      ...todo,
+      lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null
+    }));
+
+    return res.status(200).json(serializedTodos);
   }
 
   if (req.method === 'POST') {
@@ -40,7 +46,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ownerId: session.user.id
       }
     });
-    return res.status(201).json(todo);
+    
+    return res.status(201).json({
+      ...todo,
+      lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null
+    });
   }
 
   res.setHeader('Allow', ['GET', 'POST']);

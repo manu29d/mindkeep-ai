@@ -31,6 +31,12 @@ enum AttachmentType {
   FILE
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model Account {
   id                 String  @id @default(cuid())
   userId             String
@@ -78,6 +84,7 @@ model User {
   todos         Todo[]     @relation("Owner")
   assignedTodos Todo[]     @relation("Assignees")
   teams         TeamMember[]
+  sentInvitations Invitation[] @relation("SentInvitations")
 }
 
 model VerificationToken {
@@ -115,6 +122,7 @@ model Category {
   title       String
   color       String   @default("bg-white")
   description String?
+  deadline    DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
@@ -168,6 +176,7 @@ model Todo {
   
   subTodos      SubTodo[]
   attachments   Attachment[]
+  invitations   Invitation[]
 }
 
 model SubTodo {
@@ -190,4 +199,20 @@ model Attachment {
   
   categoryId String?
   category   Category?      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  email     String
+  senderId  String
+  sender    User     @relation("SentInvitations", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  todoId    String?
+  todo      Todo?    @relation(fields: [todoId], references: [id], onDelete: Cascade)
+  
+  status    InvitationStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
 }

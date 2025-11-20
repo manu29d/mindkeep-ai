@@ -9,3 +9,9 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+// Fix BigInt serialization
+// @ts-expect-error BigInt serialization
+BigInt.prototype.toJSON = function () {
+  return Number(this);
+};

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Todo, TimerState } from '../types';
 import { useTodo } from '../context/TodoContext';
+import { useFeatureGate } from '../hooks/useFeatureGate';
+import CollaboratorModal from './CollaboratorModal';
 import { 
   Play, Pause, Square, Bot, 
   Calendar as CalendarIcon, Trash2, UserPlus, Paperclip
@@ -30,8 +32,10 @@ const formatDate = (isoString: string) => {
 
 const TodoItem: React.FC<Props> = ({ todo, onClick }) => {
   const { toggleTimer, stopTimer, enrichTodoWithAI, deleteTodo, updateTodo } = useTodo();
+  const { canAccessAI } = useFeatureGate();
   const [isHovered, setIsHovered] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [showCollaboratorModal, setShowCollaboratorModal] = useState(false);
 
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('todoId', todo.id);
@@ -150,13 +154,15 @@ const TodoItem: React.FC<Props> = ({ todo, onClick }) => {
       {/* Footer Actions */}
       <div className={`flex items-center justify-between mt-3 pt-2 border-t border-gray-100 dark:border-gray-700 ${isHovered ? 'opacity-100' : 'opacity-0'} transition-opacity duration-200`}>
         <div className="flex space-x-2">
-          <button 
-            onClick={handleAiClick}
-            disabled={aiLoading}
-            className={`p-1.5 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors ${aiLoading ? 'animate-pulse' : ''}`} title="AI Breakdown">
-            <Bot size={16} />
-          </button>
-          <button className="p-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" title="Add Collaborator">
+          {canAccessAI && (
+            <button 
+              onClick={handleAiClick}
+              disabled={aiLoading}
+              className={`p-1.5 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors ${aiLoading ? 'animate-pulse' : ''}`} title="AI Breakdown">
+              <Bot size={16} />
+            </button>
+          )}
+          <button className="p-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" title="Add Collaborator" onClick={(e) => { e.stopPropagation(); setShowCollaboratorModal(true); }}>
             <UserPlus size={16} />
           </button>
         </div>
@@ -167,6 +173,10 @@ const TodoItem: React.FC<Props> = ({ todo, onClick }) => {
           <Trash2 size={16} />
         </button>
       </div>
+
+      {showCollaboratorModal && (
+        <CollaboratorModal todoId={todo.id} onClose={() => setShowCollaboratorModal(false)} />
+      )}
     </div>
   );
 };

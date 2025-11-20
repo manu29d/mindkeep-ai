@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import { prisma } from "../../../lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -16,10 +17,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (category.ownerId !== session.user.id) return res.status(403).json({ error: "Forbidden" });
 
   if (req.method === 'PUT') {
-    const { title, color, description } = req.body;
+    const { title, color, description, deadline } = req.body;
+    const data: Prisma.CategoryUpdateInput = { title, color, description };
+    if (deadline !== undefined) {
+        data.deadline = deadline ? new Date(deadline) : null;
+    }
+
     const updated = await prisma.category.update({
       where: { id },
-      data: { title, color, description }
+      data
     });
     return res.status(200).json(updated);
   }

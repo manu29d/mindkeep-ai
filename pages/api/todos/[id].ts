@@ -36,7 +36,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: { id },
       data
     });
-    return res.status(200).json(updated);
+    return res.status(200).json({
+      ...updated,
+      lastStartedAt: updated.lastStartedAt ? Number(updated.lastStartedAt) : null
+    });
   }
 
   if (req.method === 'DELETE') {
