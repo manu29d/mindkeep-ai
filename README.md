@@ -29,7 +29,11 @@ A smart, Google Keep-inspired to-do application designed for both personal produ
 - **Icons**: Lucide React
 
 ## Setup
-1. Clone the repository.
-2. Create a `.env` file with your Google Gemini API Key: `API_KEY=your_key_here`.
-3. Install dependencies (if using a local bundler, though this is set up for ES Modules in browser).
-4. Run the application.
+1. **Install dependencies**: `npm install`.
+2. **Create your environment file**: copy `.env.example` to `.env` and set `GEMINI_API_KEY` plus any custom `DATABASE_URL`.
+3. **Start Postgres**: `docker compose up -d postgres` boots the local database defined in `docker-compose.yml`.
+4. **Run Prisma migrations**: `npm run prisma:migrate` applies the schema in `prisma/schema.prisma` and seeds the database structure (first run seeds using `20241120120000_init`).
+5. **Generate the Prisma Client** (if you change the schema): `npm run prisma:generate`.
+6. **Start the app**: `npm run dev`.
+
+> Need to inspect or edit data quickly? Run `npm run prisma:studio` after the database is running.
