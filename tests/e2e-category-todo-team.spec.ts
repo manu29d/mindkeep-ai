@@ -13,12 +13,8 @@ test.describe('MindKeep AI End-to-End', () => {
         page = await browser.newPage();
         // Sign up flow
         await page.goto(`${BASE_URL}/auth/signup`);
-        const uniqueId = Date.now();
-        // Use incremental integer for email suffix
-        const emailCounter = (global as any).__testEmailCounter || 1;
-        (global as any).__testEmailCounter = emailCounter + 1;
-        const email = `test${emailCounter}@example.com`;
-        await page.getByPlaceholder('Full Name').fill(`Test User ${uniqueId}`);
+        const email = `test@example.com`;
+        await page.getByPlaceholder('Full Name').fill(`Test User`);
         await page.getByPlaceholder('Email').fill(email);
         await page.getByPlaceholder('Password').fill('password123');
         await page.getByRole('button', { name: /sign up/i }).click();
@@ -37,6 +33,13 @@ test.describe('MindKeep AI End-to-End', () => {
     });
 
     test.afterAll(async () => {
+        // Cleanup: Delete the test user from the database
+        const emailCounter = (global as any).__testEmailCounter - 1;
+        const email = `test${emailCounter}@example.com`;
+        await prisma.user.delete({
+            where: { email }
+        });
+        await prisma.$disconnect();
         await page.close();
     });
 

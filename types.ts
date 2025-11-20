@@ -94,3 +94,13 @@ export interface ChatMessage {
   text: string;
   timestamp: number;
 }
+
+export interface Invitation {
+  id: string;
+  email: string;
+  senderId: string;
+  todoId?: string;
+  todo?: Todo & { owner?: User };
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  createdAt: string;
+}

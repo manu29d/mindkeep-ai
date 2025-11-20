@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
-import { Todo, Category, ViewMode, TimerState, Phase, Team } from '../types';
+import { Todo, Category, ViewMode, TimerState, Phase, Team, Invitation } from '../types';
 import { generateSubTodos, generateCategoryPlan } from '../services/geminiService';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -90,8 +90,8 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const interval = setInterval(() => {
       mutate('/api/todos', (currentTodos: Todo[] | undefined) => {
-        if (!currentTodos) return [];
-        return currentTodos.map(todo => {
+        const todos = Array.isArray(currentTodos) ? currentTodos : [];
+        return todos.map(todo => {
           if (todo.timerState === TimerState.RUNNING) {
             return { ...todo, timeSpent: (todo.timeSpent || 0) + 1 };
           }
@@ -294,6 +294,21 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ name })
       });
       if (!res.ok) throw new Error('Failed to create team');
+      mutate('/api/teams');
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const addTeamMember = async (teamId: string, name: string, role: string) => {
+    try {
+      const res = await fetch(`/api/teams/${teamId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: name, role })
+      });
+      if (!res.ok) throw new Error('Failed to add team member');
+      
       mutate('/api/teams');
     } catch (error) {
       console.error(error);
