@@ -668,9 +668,18 @@ const App: React.FC = () => {
              />
            </div>
            <div className="flex items-center space-x-3">
-             <div className="text-right hidden md:block">
+             <div className="hidden md:flex items-center space-x-3">
+               <button
+                 onClick={() => setCategoryModalOpen(true)}
+                 className="inline-flex items-center space-x-2 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+               >
+                 <Plus size={16} />
+                 <span className="text-sm font-medium">New List</span>
+               </button>
+               <div className="text-right">
                 <div className="text-sm font-bold text-gray-800 dark:text-white">Jane Doe</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">Product Manager</div>
+               </div>
              </div>
              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-lg">
                JD

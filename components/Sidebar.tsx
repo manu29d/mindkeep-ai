@@ -105,12 +105,6 @@ const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onM
       <InvitationsList />
 
       <div className="p-4 space-y-2 border-t dark:border-gray-800">
-         <button 
-          onClick={onNewCategory}
-          className="w-full flex items-center justify-center space-x-2 bg-gray-900 dark:bg-gray-700 text-white py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors shadow-lg">
-          <Plus size={20} />
-          <span>New Category</span>
-        </button>
         <button 
           onClick={onOpenChat}
           className="w-full flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">

@@ -28,7 +28,7 @@ describe('MindKeep AI End-to-End', () => {
   });
 
   it('Create a new category', () => {
-    cy.get('button').contains(/new category/i).click();
+    cy.get('button').contains(/new list/i).click();
     cy.get('input[placeholder="Category Name (e.g., Marketing Launch)"]').type('Test Category');
     cy.get('button').contains(/create category/i).click();
     cy.contains('Test Category').should('be.visible');

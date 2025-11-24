@@ -44,7 +44,7 @@ test.describe('MindKeep AI End-to-End', () => {
     });
 
     test('Create a new category', async () => {
-        await page.getByRole('button', { name: /new category/i }).click();
+        await page.getByRole('button', { name: /new list/i }).click();
         await page.getByPlaceholder('Category Name (e.g., Marketing Launch)').fill('Test Category');
         await page.getByRole('button', { name: /create category/i }).click();
         await expect(page.getByText('Test Category')).toBeVisible();
