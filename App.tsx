@@ -634,6 +634,7 @@ const App: React.FC = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [teamsModalOpen, setTeamsModalOpen] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -652,6 +653,7 @@ const App: React.FC = () => {
         onOpenChat={() => setChatOpen(true)} 
         onNewCategory={() => setCategoryModalOpen(true)}
         onManageTeams={() => setTeamsModalOpen(true)}
+        onOpenUpgrade={() => setUpgradeModalOpen(true)}
       />
 
       {/* Main Content */}
@@ -699,6 +701,55 @@ const App: React.FC = () => {
       {chatOpen && <AIChat onClose={() => setChatOpen(false)} />}
       {categoryModalOpen && <NewCategoryModal onClose={() => setCategoryModalOpen(false)} />}
       {teamsModalOpen && <TeamsModal onClose={() => setTeamsModalOpen(false)} />}
+      {upgradeModalOpen && (
+        <ModalOverlay onClose={() => setUpgradeModalOpen(false)}>
+          <div className="p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Upgrade Plan (Demo)</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Select a tier to enable demo features. No payment required.</p>
+            <div className="space-y-3">
+              <button onClick={async () => {
+                  try {
+                    const res = await fetch('/api/users/upgrade', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tier: 'FREE' }) });
+                    if (!res.ok) throw new Error('Upgrade failed');
+                    setUpgradeModalOpen(false);
+                    // Refresh the session and data
+                    await fetch('/api/auth/session');
+                    window.location.reload();
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }} className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">Free — Keep current plan</button>
+
+              <button onClick={async () => {
+                  try {
+                    const res = await fetch('/api/users/upgrade', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tier: 'PREMIUM' }) });
+                    if (!res.ok) throw new Error('Upgrade failed');
+                    setUpgradeModalOpen(false);
+                    await fetch('/api/auth/session');
+                    window.location.reload();
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }} className="w-full text-left px-4 py-3 rounded-lg border border-indigo-200 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-800">Pro — Enable premium features (Demo)</button>
+
+              <button onClick={async () => {
+                  try {
+                    const res = await fetch('/api/users/upgrade', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tier: 'ENTERPRISE' }) });
+                    if (!res.ok) throw new Error('Upgrade failed');
+                    setUpgradeModalOpen(false);
+                    await fetch('/api/auth/session');
+                    window.location.reload();
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }} className="w-full text-left px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-800">Enterprise — Enable Teams (Demo)</button>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button onClick={() => setUpgradeModalOpen(false)} className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800">Close</button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
       {selectedTodoId && (
         <TodoDetailModal 
             todoId={selectedTodoId} 

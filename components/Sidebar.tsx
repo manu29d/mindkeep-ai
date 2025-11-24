@@ -17,7 +17,7 @@ import {
   Lock
 } from 'lucide-react';
 
-const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onManageTeams: () => void }> = ({ onOpenChat, onNewCategory, onManageTeams }) => {
+const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onManageTeams: () => void, onOpenUpgrade: () => void }> = ({ onOpenChat, onNewCategory, onManageTeams, onOpenUpgrade }) => {
   const { viewMode, setViewMode, isDarkMode, toggleDarkMode, teams, activeTeamId, setActiveTeamId } = useTodo();
   const { canAccessTeams } = useFeatureGate();
 
@@ -94,10 +94,12 @@ const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onM
         ) : (
           <div className="mt-8 px-4">
              <div className="flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                <span>Teams</span>
-                <Lock size={12} />
-             </div>
-             <div className="text-xs text-gray-400 italic">Upgrade to Enterprise</div>
+                 <span>Teams</span>
+                 <button onClick={onOpenUpgrade} className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-100 px-2 py-0.5 rounded">
+                  Upgrade
+                 </button>
+               </div>
+               <div className="text-xs text-gray-400 italic">Choose a tier to enable Teams</div>
           </div>
         )}
       </nav>
