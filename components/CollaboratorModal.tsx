@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Search, UserPlus, Mail } from 'lucide-react';
 
 interface CollaboratorModalProps {
@@ -11,6 +12,19 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({ todoId, onClose }
   const [searchResult, setSearchResult] = useState<{ id: string; name: string; email: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    // Create a container div for the portal and append to document.body
+    const el = document.createElement('div');
+    // Ensure the portal sits above everything; utility z-index class is applied inside content as well
+    el.setAttribute('data-portal', 'collaborator-modal');
+    document.body.appendChild(el);
+    setPortalEl(el);
+    return () => {
+      if (document.body.contains(el)) document.body.removeChild(el);
+    };
+  }, []);
 
   const searchUser = async () => {
     if (!email.trim()) return;
@@ -46,7 +60,7 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({ todoId, onClose }
     setInviting(false);
   };
 
-  return (
+  const content = (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-4">
@@ -108,6 +122,10 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({ todoId, onClose }
       </div>
     </div>
   );
+
+  if (!portalEl) return null; // Wait until portal container exists (SSR-safe)
+
+  return createPortal(content, portalEl);
 };
 
 export default CollaboratorModal;
