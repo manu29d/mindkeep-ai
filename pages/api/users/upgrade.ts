@@ -5,7 +5,7 @@ import { prisma } from '../../../lib/prisma';
 import { SubscriptionTier } from '@prisma/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getServerSession(req, res, authOptions as any);
+  const session = await getServerSession(req, res, authOptions as any) as any;
   if (!session) return res.status(401).json({ error: 'Unauthorized' });
 
   if (req.method !== 'POST') {
