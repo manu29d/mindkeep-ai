@@ -1,5 +1,4 @@
 import { useSession } from 'next-auth/react';
-import { SubscriptionTier } from '@prisma/client';
 
 export const useFeatureGate = () => {
   const { data: session } = useSession();
