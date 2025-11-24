@@ -8,7 +8,10 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
         <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">MindKeep AI</div>
-        <div className="space-x-4">
+        <div className="space-x-4 flex items-center">
+          <Link href="/pricing" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
+            Pricing
+          </Link>
           <Link href="/auth/signin" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium">
             Log In
           </Link>
@@ -32,6 +35,9 @@ export default function LandingPage() {
           </Link>
           <Link href="#features" className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
             Learn More
+          </Link>
+          <Link href="/pricing" className="bg-white/80 dark:bg-gray-800/60 text-gray-900 dark:text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition-transform hidden md:inline-flex items-center">
+            View Pricing
           </Link>
         </div>
       </header>
