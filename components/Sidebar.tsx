@@ -14,10 +14,10 @@ import {
   Moon,
   Sun,
   Activity,
-  Lock
+  
 } from 'lucide-react';
 
-const Sidebar: React.FC<{ onOpenChat: () => void, onNewCategory: () => void, onManageTeams: () => void, onOpenUpgrade: () => void }> = ({ onOpenChat, onNewCategory, onManageTeams, onOpenUpgrade }) => {
+const Sidebar: React.FC<{ onOpenChat: () => void, onManageTeams: () => void, onOpenUpgrade: () => void }> = ({ onOpenChat, onManageTeams, onOpenUpgrade }) => {
   const { viewMode, setViewMode, isDarkMode, toggleDarkMode, teams, activeTeamId, setActiveTeamId } = useTodo();
   const { canAccessTeams } = useFeatureGate();
 

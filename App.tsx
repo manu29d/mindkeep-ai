@@ -436,20 +436,61 @@ const TeamsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const { teams, addTeam, addTeamMember } = useTodo();
     const [newTeamName, setNewTeamName] = useState('');
     const [newMemberName, setNewMemberName] = useState('');
+    const [newMemberError, setNewMemberError] = useState<string | null>(null);
     const [activeTeamId, setActiveTeamId] = useState<string | null>(teams[0]?.id || null);
+    const [addedMembers, setAddedMembers] = useState<Record<string, any[]>>({});
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-    const handleCreateTeam = () => {
-        if(newTeamName) {
-            addTeam(newTeamName);
-            setNewTeamName('');
+    useEffect(() => {
+      // If teams list changes (e.g., after creating one), ensure an active team is selected
+      if (!activeTeamId && teams[0]) setActiveTeamId(teams[0].id);
+      // If the currently selected team was removed, reset to first available
+      if (activeTeamId && !teams.find(t => t.id === activeTeamId)) {
+        setActiveTeamId(teams[0]?.id || null);
+      }
+    }, [teams]);
+
+    const handleCreateTeam = async () => {
+      if (newTeamName) {
+        const created = await addTeam(newTeamName);
+        setNewTeamName('');
+        if (created?.id) {
+          setActiveTeamId(created.id);
+        } else {
+          // fallback: first team will be selected by the teams effect
         }
+      }
     }
 
-    const handleAddMember = () => {
-        if(activeTeamId && newMemberName) {
-            addTeamMember(activeTeamId, newMemberName, 'Member');
-            setNewMemberName('');
-        }
+    const handleAddMember = async () => {
+      setNewMemberError(null);
+      if (!activeTeamId) {
+        setNewMemberError('Select a team first');
+        return;
+      }
+      if (!newMemberName) return;
+      const identifier = newMemberName.trim();
+      if (!identifier) return;
+
+      try {
+        // backend will create the user if they don't exist (by name or email)
+        const created = await addTeamMember(activeTeamId, identifier, 'MEMBER');
+        setNewMemberName('');
+        setNewMemberError(null);
+
+        // Optimistically show created member in UI
+        setAddedMembers(prev => ({
+          ...prev,
+          [activeTeamId]: [...(prev[activeTeamId] || []), created]
+        }));
+
+        // show success toast briefly
+        setToastMessage('Member added');
+        setTimeout(() => setToastMessage(null), 3000);
+      } catch (err) {
+        console.error(err);
+        setNewMemberError('Failed to add member. Ensure you have permission.');
+      }
     }
 
     return (
@@ -494,7 +535,11 @@ const TeamsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                 <div className="flex-1 overflow-y-auto">
                                     <h3 className="font-bold text-gray-700 dark:text-gray-300 mb-4">Team Members</h3>
                                     <div className="space-y-3">
-                                        {teams.find(t => t.id === activeTeamId)?.members.map(m => (
+                                        {(() => {
+                                          const serverMembers = teams.find(t => t.id === activeTeamId)?.members || [];
+                                          const extra = addedMembers[activeTeamId] || [];
+                                          const merged = [...serverMembers, ...extra];
+                                          return merged.map(m => (
                                             <div key={m.id} className="flex items-center space-x-3 p-2 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-100 dark:border-gray-700">
                                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
                                                     {m.avatar}
@@ -504,7 +549,8 @@ const TeamsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                                     <div className="text-xs text-gray-500">{m.role}</div>
                                                 </div>
                                             </div>
-                                        ))}
+                                          ));
+                                        })()}
                                     </div>
                                 </div>
                                 <div className="mt-4 pt-4 border-t dark:border-gray-700">
@@ -520,6 +566,9 @@ const TeamsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                             <Plus size={16} />
                                         </button>
                                      </div>
+                                       {newMemberError && (
+                                         <div className="text-xs text-red-500 mt-2">{newMemberError}</div>
+                                       )}
                                 </div>
                              </>
                          ) : (
@@ -651,7 +700,6 @@ const App: React.FC = () => {
       {/* Sidebar */}
       <Sidebar 
         onOpenChat={() => setChatOpen(true)} 
-        onNewCategory={() => setCategoryModalOpen(true)}
         onManageTeams={() => setTeamsModalOpen(true)}
         onOpenUpgrade={() => setUpgradeModalOpen(true)}
       />

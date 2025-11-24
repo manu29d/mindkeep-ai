@@ -42,8 +42,8 @@ interface TodoContextType {
   stopTimer: (todoId: string) => void;
 
   // Team Actions
-  addTeam: (name: string) => void;
-  addTeamMember: (teamId: string, name: string, role: string) => void;
+  addTeam: (name: string) => Promise<any>;
+  addTeamMember: (teamId: string, name: string, role: string) => Promise<any>;
 
   // Invitation Actions
   respondToInvitation: (invitationId: string, action: 'accept' | 'reject') => void;
@@ -294,25 +294,30 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ name })
       });
       if (!res.ok) throw new Error('Failed to create team');
+      const team = await res.json();
       mutate('/api/teams');
+      return team;
     } catch (error) {
       console.error(error);
     }
   };
 
   const addTeamMember = async (teamId: string, name: string, role: string) => {
-    try {
-      const res = await fetch(`/api/teams/${teamId}/members`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: name, role })
-      });
-      if (!res.ok) throw new Error('Failed to add team member');
-      
-      mutate('/api/teams');
-    } catch (error) {
-      console.error(error);
+    // Normalize role to uppercase variant accepted by the API
+    const roleParam = role ? role.toString().toUpperCase() : undefined;
+
+    const res = await fetch(`/api/teams/${teamId}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: name, role: roleParam })
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || 'Failed to add team member');
     }
+    const member = await res.json();
+    mutate('/api/teams');
+    return member;
   };
 
   const respondToInvitation = async (invitationId: string, action: 'accept' | 'reject') => {
