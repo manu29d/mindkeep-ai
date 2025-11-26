@@ -36,9 +36,15 @@ export interface Phase {
 
 export interface TeamMember {
   id: string;
-  name: string;
   role: string;
-  avatar: string;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
+  // Legacy/Optional
+  name?: string;
+  avatar?: string;
 }
 
 export interface Team {
@@ -79,7 +85,7 @@ export interface Category {
   deadline?: string; // ISO Date string
   phases?: Phase[];
   attachments?: Attachment[];
-  teamId?: string;
+  teamId?: string | null;
 }
 
 export interface User {

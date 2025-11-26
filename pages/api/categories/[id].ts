@@ -17,10 +17,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (category.ownerId !== session.user.id) return res.status(403).json({ error: "Forbidden" });
 
   if (req.method === 'PUT') {
-    const { title, color, description, deadline } = req.body;
+    const { title, color, description, deadline, teamId } = req.body;
     const data: Prisma.CategoryUpdateInput = { title, color, description };
     if (deadline !== undefined) {
         data.deadline = deadline ? new Date(deadline) : null;
+    }
+    if (teamId !== undefined) {
+        data.teamId = teamId;
     }
 
     const updated = await prisma.category.update({

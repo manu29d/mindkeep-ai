@@ -369,7 +369,7 @@ const CategoryDetailModal: React.FC<{ category: Category; onClose: () => void }>
     const [assignedTeam, setAssignedTeam] = useState(category.teamId || '');
 
     const handleSave = () => {
-        updateCategory(category.id, { title, description: desc, teamId: assignedTeam || undefined });
+        updateCategory(category.id, { title, description: desc, teamId: assignedTeam || null });
         onClose();
     }
 
@@ -538,14 +538,15 @@ const TeamsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                                         {(() => {
                                           const serverMembers = teams.find(t => t.id === activeTeamId)?.members || [];
                                           const extra = addedMembers[activeTeamId] || [];
-                                          const merged = [...serverMembers, ...extra];
+                                          const uniqueExtra = extra.filter(e => !serverMembers.some(s => s.id === e.id));
+                                          const merged = [...serverMembers, ...uniqueExtra];
                                           return merged.map(m => (
                                             <div key={m.id} className="flex items-center space-x-3 p-2 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-100 dark:border-gray-700">
                                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-                                                    {m.avatar}
+                                                    {m.user?.name?.charAt(0).toUpperCase() || '?'}
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{m.name}</div>
+                                                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{m.user?.name || 'Unknown'}</div>
                                                     <div className="text-xs text-gray-500">{m.role}</div>
                                                 </div>
                                             </div>

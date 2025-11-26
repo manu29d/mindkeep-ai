@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userToAdd = await prisma.user.create({
         data: {
           email: isEmail ? input : undefined,
-          name: isEmail ? input.split('@')[0] : input,
+          name: input,
         }
       });
     } catch (error) {
@@ -96,6 +96,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         userId: userToAdd.id,
         teamId: String(id),
         role: roleValue
+      },
+      include: {
+        user: true
       }
     });
     return res.status(201).json(newMember);
