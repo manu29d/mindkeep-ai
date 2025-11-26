@@ -110,13 +110,15 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: teamsData, error: teamError } = useSWR<Team[]>('/api/teams', fetcher);
   const { data: invitationsData, error: invError } = useSWR<Invitation[]>('/api/invitations', fetcher);
 
-  // Log errors for debugging
+  // Debug logging
   useEffect(() => {
-    if (catError) console.error('Categories fetch error:', catError);
-    if (todoError) console.error('Todos fetch error:', todoError);
-    if (teamError) console.error('Teams fetch error:', teamError);
-    if (invError) console.error('Invitations fetch error:', invError);
-  }, [catError, todoError, teamError, invError]);
+    console.log('SWR Status:', {
+      categories: { data: categoriesData?.length, error: catError?.message },
+      todos: { data: todosData?.length, error: todoError?.message, raw: todosData },
+      teams: { data: teamsData?.length, error: teamError?.message },
+      invitations: { data: invitationsData?.length, error: invError?.message }
+    });
+  }, [categoriesData, todosData, teamsData, invitationsData, catError, todoError, teamError, invError]);
 
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
   const todos = Array.isArray(todosData) ? todosData : [];

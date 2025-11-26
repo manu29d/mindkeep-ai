@@ -146,7 +146,7 @@ const TodoItem: React.FC<Props> = ({ todo, onClick }) => {
       </div>
 
       {/* Subtasks Preview */}
-      {todo.subTodos.length > 0 && (
+      {todo.subTodos && todo.subTodos.length > 0 && (
         <div className="ml-8 mt-2 space-y-1">
           {todo.subTodos.slice(0, 2).map(st => (
             <div key={st.id} className="flex items-center text-xs text-gray-500 dark:text-gray-400">
