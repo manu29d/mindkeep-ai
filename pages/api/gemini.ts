@@ -5,13 +5,6 @@ import { authOptions } from "./auth/[...nextauth]";
 import { SubscriptionTier } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 
-const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-if (!apiKey) {
-  console.warn('No Gemini API key found in environment (GEMINI_API_KEY or API_KEY).');
-}
-
-const ai = new GoogleGenAI({ apiKey });
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -23,7 +16,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ error: "Upgrade to Premium to use AI features" });
   }
 
-  const { action } = req.body || {};
+  const { action, apiKey: userApiKey } = req.body || {};
+  
+  const apiKey = userApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
+  
+  if (!apiKey) {
+    console.warn('No Gemini API key found.');
+    return res.status(500).json({ error: "AI service configuration error" });
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     if (action === 'generateSubTodos') {

@@ -32,7 +32,7 @@ interface TodoContextType {
   addPhase: (categoryId: string, title: string, deadline?: string) => void;
   
   // Todo Actions
-  addTodo: (categoryId: string, title: string, phaseId?: string) => void;
+  addTodo: (categoryId: string, title: string, phaseId?: string, description?: string) => void;
   updateTodo: (id: string, updates: Partial<Todo>) => void;
   deleteTodo: (id: string) => void;
   moveTodo: (todoId: string, targetCategoryId: string, targetPhaseId?: string) => void;
@@ -50,6 +50,10 @@ interface TodoContextType {
 
   // AI Actions
   enrichTodoWithAI: (todoId: string) => Promise<void>;
+
+  // User Preferences
+  geminiApiKey: string | null;
+  setGeminiApiKey: (key: string | null) => void;
 }
 
 const TodoContext = createContext<TodoContextType | undefined>(undefined);
@@ -57,6 +61,22 @@ const TodoContext = createContext<TodoContextType | undefined>(undefined);
 export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.BOARD);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [geminiApiKey, setGeminiApiKeyState] = useState<string | null>(null);
+
+  // Load API Key from LocalStorage
+  useEffect(() => {
+    const storedKey = localStorage.getItem('geminiApiKey');
+    if (storedKey) setGeminiApiKeyState(storedKey);
+  }, []);
+
+  const setGeminiApiKey = (key: string | null) => {
+    setGeminiApiKeyState(key);
+    if (key) {
+      localStorage.setItem('geminiApiKey', key);
+    } else {
+      localStorage.removeItem('geminiApiKey');
+    }
+  };
   
   // Filter State
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
@@ -115,10 +135,10 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (description && description.trim().length > 0) {
          // AI Generation for new category
-         const generatedTitles = await generateCategoryPlan(title, description);
+         const generatedTodos = await generateCategoryPlan(title, description);
          
-         for (const t of generatedTitles) {
-            await addTodo(newCat.id, t);
+         for (const t of generatedTodos) {
+            await addTodo(newCat.id, t.title, undefined, t.description);
          }
       }
     } catch (error) {
@@ -187,7 +207,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, false);
   };
 
-  const addTodo = async (categoryId: string, title: string, phaseId?: string) => {
+  const addTodo = async (categoryId: string, title: string, phaseId?: string, description?: string) => {
     try {
       const category = categories.find(c => c.id === categoryId);
       let deadline = category?.deadline;
@@ -199,7 +219,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await fetch('/api/todos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categoryId, title, phaseId, deadline })
+        body: JSON.stringify({ categoryId, title, phaseId, deadline, description })
       });
       if (!res.ok) throw new Error('Failed to create todo');
       
@@ -343,7 +363,8 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addCategory, deleteCategory, updateCategory, moveCategory, addPhase,
       addTodo, updateTodo, deleteTodo, moveTodo,
       toggleTimer, stopTimer, respondToInvitation, enrichTodoWithAI,
-      addTeam, addTeamMember
+      addTeam, addTeamMember,
+      geminiApiKey, setGeminiApiKey
     }}>
       {children}
     </TodoContext.Provider>

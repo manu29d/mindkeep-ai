@@ -3,10 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import CategoryBoard from './components/CategoryBoard';
 import AIChat from './components/AIChat';
+import UserPreferencesModal from './components/UserPreferencesModal';
 import { Todo, Category, Attachment } from './types';
 import { useTodo } from './context/TodoContext';
 import { useFeatureGate } from './hooks/useFeatureGate';
-import { X, Calendar, Clock, CheckSquare, Trash2, Bot, Plus, Sparkles, Check, Paperclip, File, Link as LinkIcon, User, UploadCloud, ArrowUpRight, Lock } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+import { X, Calendar, Clock, CheckSquare, Trash2, Bot, Plus, Sparkles, Check, Paperclip, File, Link as LinkIcon, User, UploadCloud, ArrowUpRight, Lock, LogOut, Settings } from 'lucide-react';
 
 // Helper date format
 const formatDate = (isoString?: string) => {
@@ -680,13 +682,26 @@ const NewCategoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 };
 
 const App: React.FC = () => {
-  const { searchQuery, setSearchQuery, isLoading } = useTodo();
+  const { searchQuery, setSearchQuery, isLoading, setGeminiApiKey } = useTodo();
   const [chatOpen, setChatOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [teamsModalOpen, setTeamsModalOpen] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [preferencesModalOpen, setPreferencesModalOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (isLoading) {
     return (
@@ -727,13 +742,47 @@ const App: React.FC = () => {
                  <Plus size={16} />
                  <span className="text-sm font-medium">New List</span>
                </button>
-               <div className="text-right">
-                <div className="text-sm font-bold text-gray-800 dark:text-white">Jane Doe</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Product Manager</div>
+               
+               <div className="relative" ref={userMenuRef}>
+                 <button 
+                   onClick={() => setUserMenuOpen(!userMenuOpen)}
+                   className="flex items-center space-x-3 focus:outline-none"
+                 >
+                   <div className="text-right hidden lg:block">
+                    <div className="text-sm font-bold text-gray-800 dark:text-white">Jane Doe</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Product Manager</div>
+                   </div>
+                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-lg cursor-pointer hover:ring-2 ring-indigo-300 transition-all">
+                     JD
+                   </div>
+                 </button>
+
+                 {userMenuOpen && (
+                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                     <button
+                       onClick={() => {
+                         setPreferencesModalOpen(true);
+                         setUserMenuOpen(false);
+                       }}
+                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2"
+                     >
+                       <Settings size={16} />
+                       <span>Preferences</span>
+                     </button>
+                     <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                     <button
+                       onClick={() => {
+                         setGeminiApiKey(null);
+                         signOut();
+                       }}
+                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2"
+                     >
+                       <LogOut size={16} />
+                       <span>Log Out</span>
+                     </button>
+                   </div>
+                 )}
                </div>
-             </div>
-             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-lg">
-               JD
              </div>
            </div>
         </header>
@@ -750,6 +799,7 @@ const App: React.FC = () => {
       {chatOpen && <AIChat onClose={() => setChatOpen(false)} />}
       {categoryModalOpen && <NewCategoryModal onClose={() => setCategoryModalOpen(false)} />}
       {teamsModalOpen && <TeamsModal onClose={() => setTeamsModalOpen(false)} />}
+      {preferencesModalOpen && <UserPreferencesModal onClose={() => setPreferencesModalOpen(false)} />}
       {upgradeModalOpen && (
         <ModalOverlay onClose={() => setUpgradeModalOpen(false)}>
           <div className="p-6 w-full max-w-md">

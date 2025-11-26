@@ -1,10 +1,13 @@
 import { Todo, Category } from "../types";
 
 const post = async (body: any) => {
+  const apiKey = typeof window !== 'undefined' ? localStorage.getItem('geminiApiKey') : null;
+  const payload = { ...body, apiKey };
+
   const resp = await fetch('/api/gemini', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
   if (!resp.ok) {
     const text = await resp.text().catch(() => '');
@@ -23,7 +26,7 @@ export const generateSubTodos = async (title: string, description: string = ""):
   }
 };
 
-export const generateCategoryPlan = async (categoryTitle: string, userDescription: string): Promise<string[]> => {
+export const generateCategoryPlan = async (categoryTitle: string, userDescription: string): Promise<{title: string, description: string}[]> => {
   try {
     const json = await post({ action: 'generateCategoryPlan', categoryTitle, userDescription });
     return json.todos || [];
