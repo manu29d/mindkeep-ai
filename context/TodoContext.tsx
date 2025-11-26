@@ -4,13 +4,16 @@ import { Todo, Category, ViewMode, TimerState, Phase, Team, Invitation } from '.
 import { generateSubTodos, generateCategoryPlan } from '../services/geminiService';
 
 const fetcher = async (url: string) => {
+  console.log('Fetcher called for:', url);
   const res = await fetch(url);
   if (!res.ok) {
     const error = new Error('API request failed');
     console.error(`Fetcher error for ${url}:`, res.status, res.statusText);
     throw error;
   }
-  return res.json();
+  const data = await res.json();
+  console.log(`Fetcher response for ${url}:`, Array.isArray(data) ? `Array(${data.length})` : data);
+  return data;
 };
 
 interface TodoContextType {
