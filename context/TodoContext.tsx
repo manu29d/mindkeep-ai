@@ -4,16 +4,13 @@ import { Todo, Category, ViewMode, TimerState, Phase, Team, Invitation } from '.
 import { generateSubTodos, generateCategoryPlan } from '../services/geminiService';
 
 const fetcher = async (url: string) => {
-  console.log('Fetcher called for:', url);
   const res = await fetch(url);
   if (!res.ok) {
     const error = new Error('API request failed');
     console.error(`Fetcher error for ${url}:`, res.status, res.statusText);
     throw error;
   }
-  const data = await res.json();
-  console.log(`Fetcher response for ${url}:`, Array.isArray(data) ? `Array(${data.length})` : data);
-  return data;
+  return res.json();
 };
 
 interface TodoContextType {
@@ -113,27 +110,12 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: teamsData, error: teamError } = useSWR<Team[]>('/api/teams', fetcher);
   const { data: invitationsData, error: invError } = useSWR<Invitation[]>('/api/invitations', fetcher);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('SWR Status:', {
-      categories: { data: categoriesData?.length, error: catError?.message },
-      todos: { data: todosData?.length, error: todoError?.message, raw: todosData },
-      teams: { data: teamsData?.length, error: teamError?.message },
-      invitations: { data: invitationsData?.length, error: invError?.message }
-    });
-  }, [categoriesData, todosData, teamsData, invitationsData, catError, todoError, teamError, invError]);
+
 
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
   const todos = Array.isArray(todosData) ? todosData : [];
   const teams = Array.isArray(teamsData) ? teamsData : [];
   const invitations = Array.isArray(invitationsData) ? invitationsData : [];
-  
-  console.log('Context arrays:', {
-    categoriesData: { isArray: Array.isArray(categoriesData), value: categoriesData },
-    todosData: { isArray: Array.isArray(todosData), value: todosData },
-    categories: categories.length,
-    todos: todos.length
-  });
 
   const isLoading = (!categoriesData && !catError) || (!todosData && !todoError) || (!teamsData && !teamError) || (!invitationsData && !invError);
 
@@ -148,17 +130,21 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 
-  // Timer Ticker
+  // Timer Ticker - only run after initial data is loaded
   useEffect(() => {
+    if (isLoading) return; // Don't start timer until data is loaded
+    
     const interval = setInterval(() => {
       mutate('/api/todos', (currentTodos: Todo[] | undefined) => {
-        // Don't mutate if we don't have data yet
-        if (!currentTodos || !Array.isArray(currentTodos)) {
-          console.log('Timer tick - skipping, no data yet');
+        if (!currentTodos || !Array.isArray(currentTodos) || currentTodos.length === 0) {
           return currentTodos;
         }
         
-        console.log('Timer tick - currentTodos:', currentTodos.length);
+        const hasRunningTimer = currentTodos.some(t => t.timerState === TimerState.RUNNING);
+        if (!hasRunningTimer) {
+          return currentTodos; // No timers running, don't update
+        }
+        
         return currentTodos.map(todo => {
           if (todo.timerState === TimerState.RUNNING) {
             return { ...todo, timeSpent: (todo.timeSpent || 0) + 1 };
@@ -168,7 +154,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }, false);
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isLoading]);
 
   const addCategory = async (title: string, color: string, description?: string, deadline?: string, teamId?: string) => {
     try {

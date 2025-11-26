@@ -723,11 +723,6 @@ const App: React.FC = () => {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Debug logging for production
-  useEffect(() => {
-    console.log('App rendered - Categories:', categories.length, 'Todos:', todos.length);
-  }, [categories.length, todos.length]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {

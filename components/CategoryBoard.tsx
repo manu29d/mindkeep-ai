@@ -372,16 +372,6 @@ const CategoryBoard: React.FC<{ onTodoClick: (t: Todo) => void; onEditCategory: 
         return true;
     });
     
-    // Debug logging
-    if (filtered.length === 0 && todos.some(t => t.categoryId === catId)) {
-      console.log('CategoryBoard: Todos exist for category but filtered to 0', {
-        categoryId: catId,
-        totalTodos: todos.filter(t => t.categoryId === catId).length,
-        completedCount: todos.filter(t => t.categoryId === catId && t.completed).length,
-        searchQuery
-      });
-    }
-    
     return filtered;
   };
 
