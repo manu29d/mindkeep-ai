@@ -30,7 +30,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       createdAt: todo.createdAt.getTime(),
       completedAt: todo.completedAt ? todo.completedAt.getTime() : undefined,
       assigneeIds: todo.assignees.map(a => a.id),
-      lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null
+      lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null,
+      subTodos: todo.subTodos || [],
+      attachments: todo.attachments || []
     }));
 
     return res.status(200).json(serializedTodos);
@@ -57,7 +59,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       createdAt: todo.createdAt.getTime(),
       completedAt: todo.completedAt ? todo.completedAt.getTime() : undefined,
       assigneeIds: todo.assignees.map(a => a.id),
-      lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null
+      lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null,
+      subTodos: todo.subTodos || [],
+      attachments: todo.attachments || []
     });
   }
 

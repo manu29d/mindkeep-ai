@@ -357,7 +357,7 @@ const CategoryBoard: React.FC<{ onTodoClick: (t: Todo) => void; onEditCategory: 
 
   // 3. Filter Todos by Search Query
   const getFilteredTodos = (catId: string) => {
-    return todos.filter(t => {
+    const filtered = todos.filter(t => {
         if (t.categoryId !== catId) return false;
         if (t.completed) return false;
         
@@ -366,11 +366,23 @@ const CategoryBoard: React.FC<{ onTodoClick: (t: Todo) => void; onEditCategory: 
             const query = searchQuery.toLowerCase();
             const matchesTitle = t.title.toLowerCase().includes(query);
             const matchesDesc = t.description?.toLowerCase().includes(query);
-            const matchesSub = t.subTodos.some(st => st.title.toLowerCase().includes(query));
+            const matchesSub = Array.isArray(t.subTodos) && t.subTodos.some(st => st.title.toLowerCase().includes(query));
             return matchesTitle || matchesDesc || matchesSub;
         }
         return true;
     });
+    
+    // Debug logging
+    if (filtered.length === 0 && todos.some(t => t.categoryId === catId)) {
+      console.log('CategoryBoard: Todos exist for category but filtered to 0', {
+        categoryId: catId,
+        totalTodos: todos.filter(t => t.categoryId === catId).length,
+        completedCount: todos.filter(t => t.categoryId === catId && t.completed).length,
+        searchQuery
+      });
+    }
+    
+    return filtered;
   };
 
   // DND Handlers for Categories

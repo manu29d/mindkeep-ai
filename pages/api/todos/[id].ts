@@ -55,7 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       createdAt: updated.createdAt.getTime(),
       completedAt: updated.completedAt ? updated.completedAt.getTime() : undefined,
       assigneeIds: updated.assignees.map(a => a.id),
-      lastStartedAt: updated.lastStartedAt ? Number(updated.lastStartedAt) : null
+      lastStartedAt: updated.lastStartedAt ? Number(updated.lastStartedAt) : null,
+      subTodos: updated.subTodos || [],
+      attachments: updated.attachments || []
     });
   }
 
