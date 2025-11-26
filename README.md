@@ -37,3 +37,21 @@ A smart, Google Keep-inspired to-do application designed for both personal produ
 6. **Start the app**: `npm run dev`.
 
 > Need to inspect or edit data quickly? Run `npm run prisma:studio` after the database is running.
+
+## Deployment (Vercel)
+
+1. **Push to GitHub**: Ensure your project is pushed to a GitHub repository.
+2. **Import to Vercel**:
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard) and click **Add New...** > **Project**.
+   - Import your `mindkeep-ai` repository.
+3. **Configure Project**:
+   - **Framework Preset**: Next.js (should be auto-detected).
+   - **Build Command**: `npx prisma migrate deploy && next build` (This ensures your production database schema is up-to-date).
+   - **Environment Variables**: Add the following:
+     - `DATABASE_URL`: Your production PostgreSQL connection string (e.g., from Vercel Postgres, Neon, or Supabase).
+     - `NEXTAUTH_SECRET`: A strong random string (generate one with `openssl rand -base64 32`).
+     - `NEXTAUTH_URL`: Your production URL (e.g., `https://mindkeep-ai.vercel.app`).
+     - `GEMINI_API_KEY`: Your Google GenAI API key.
+4. **Deploy**: Click **Deploy**. Vercel will build your app, run migrations, and launch it.
+
+> **Note**: Ensure your production database is accessible from Vercel's build environment. If using Vercel Postgres, the `DATABASE_URL` is automatically set if you link the database store.
