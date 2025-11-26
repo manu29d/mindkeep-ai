@@ -23,13 +23,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data.deadline = deadline ? new Date(deadline) : null;
     }
     if (teamId !== undefined) {
-        data.teamId = teamId;
+        if (teamId) {
+            data.team = { connect: { id: teamId } };
+        } else {
+            data.team = { disconnect: true };
+        }
     }
 
     const updated = await prisma.category.update({
       where: { id },
       data
     });
+
+    // Propagate deadline to todos that don't have one
+    if (data.deadline) {
+        await prisma.todo.updateMany({
+            where: {
+                categoryId: id,
+                deadline: null
+            },
+            data: {
+                deadline: data.deadline
+            }
+        });
+    }
+
     return res.status(200).json(updated);
   }
 

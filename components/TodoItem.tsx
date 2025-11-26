@@ -103,6 +103,15 @@ const TodoItem: React.FC<Props> = ({ todo, onClick }) => {
                         {todo.attachments.length}
                     </div>
                 )}
+                {todo.assignees && todo.assignees.length > 0 && (
+                    <div className="flex -space-x-1.5 items-center">
+                        {todo.assignees.map(assignee => (
+                            <div key={assignee.id} className="w-4 h-4 rounded-full bg-indigo-100 border border-white dark:border-gray-800 flex items-center justify-center text-[8px] font-bold text-indigo-600" title={assignee.name || assignee.email}>
+                                {assignee.name?.[0] || assignee.email?.[0] || '?'}
+                            </div>
+                        ))}
+                    </div>
+                )}
              </div>
            </div>
         </div>
@@ -175,7 +184,7 @@ const TodoItem: React.FC<Props> = ({ todo, onClick }) => {
       </div>
 
       {showCollaboratorModal && (
-        <CollaboratorModal todoId={todo.id} onClose={() => setShowCollaboratorModal(false)} />
+        <CollaboratorModal todo={todo} onClose={() => setShowCollaboratorModal(false)} />
       )}
     </div>
   );

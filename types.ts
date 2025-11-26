@@ -36,6 +36,7 @@ export interface Phase {
 
 export interface TeamMember {
   id: string;
+  userId: string;
   role: string;
   user?: {
     name?: string | null;
@@ -72,6 +73,7 @@ export interface Todo {
   // Premium/Enterprise
   subTodos: SubTodo[];
   assigneeIds: string[];
+  assignees?: User[];
   attachments: Attachment[];
 }
 

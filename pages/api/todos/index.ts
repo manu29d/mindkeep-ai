@@ -22,11 +22,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const todos = await prisma.todo.findMany({
       where,
-      include: { subTodos: true, attachments: true }
+      include: { subTodos: true, attachments: true, assignees: true }
     });
     
     const serializedTodos = todos.map(todo => ({
       ...todo,
+      assigneeIds: todo.assignees.map(a => a.id),
       lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null
     }));
 

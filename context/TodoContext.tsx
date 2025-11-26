@@ -211,10 +211,6 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const category = categories.find(c => c.id === categoryId);
       let deadline = category?.deadline;
-      if (!deadline) {
-          const today = new Date();
-          deadline = today.toISOString();
-      }
 
       const res = await fetch('/api/todos', {
         method: 'POST',
