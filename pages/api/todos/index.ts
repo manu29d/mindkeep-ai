@@ -27,6 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const serializedTodos = todos.map(todo => ({
       ...todo,
+      createdAt: todo.createdAt.getTime(),
+      completedAt: todo.completedAt ? todo.completedAt.getTime() : undefined,
       assigneeIds: todo.assignees.map(a => a.id),
       lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null
     }));
@@ -46,11 +48,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         phaseId: phaseId || undefined,
         deadline: deadline ? new Date(deadline) : null,
         ownerId: session.user.id
-      }
+      },
+      include: { subTodos: true, attachments: true, assignees: true }
     });
     
     return res.status(201).json({
       ...todo,
+      createdAt: todo.createdAt.getTime(),
+      completedAt: todo.completedAt ? todo.completedAt.getTime() : undefined,
+      assigneeIds: todo.assignees.map(a => a.id),
       lastStartedAt: todo.lastStartedAt ? Number(todo.lastStartedAt) : null
     });
   }

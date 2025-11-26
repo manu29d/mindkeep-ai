@@ -48,10 +48,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const updated = await prisma.todo.update({
       where: { id },
       data,
-      include: { assignees: true }
+      include: { assignees: true, subTodos: true, attachments: true }
     });
     return res.status(200).json({
       ...updated,
+      createdAt: updated.createdAt.getTime(),
+      completedAt: updated.completedAt ? updated.completedAt.getTime() : undefined,
       assigneeIds: updated.assignees.map(a => a.id),
       lastStartedAt: updated.lastStartedAt ? Number(updated.lastStartedAt) : null
     });
