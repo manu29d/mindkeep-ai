@@ -712,7 +712,7 @@ const NewCategoryModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 };
 
 const App: React.FC = () => {
-  const { searchQuery, setSearchQuery, isLoading, setGeminiApiKey } = useTodo();
+  const { searchQuery, setSearchQuery, isLoading, setGeminiApiKey, todos, categories } = useTodo();
   const [chatOpen, setChatOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [teamsModalOpen, setTeamsModalOpen] = useState(false);
@@ -722,6 +722,11 @@ const App: React.FC = () => {
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Debug logging for production
+  useEffect(() => {
+    console.log('App rendered - Categories:', categories.length, 'Todos:', todos.length);
+  }, [categories.length, todos.length]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

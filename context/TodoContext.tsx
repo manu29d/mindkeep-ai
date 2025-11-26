@@ -3,7 +3,15 @@ import useSWR, { mutate } from 'swr';
 import { Todo, Category, ViewMode, TimerState, Phase, Team, Invitation } from '../types';
 import { generateSubTodos, generateCategoryPlan } from '../services/geminiService';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const error = new Error('API request failed');
+    console.error(`Fetcher error for ${url}:`, res.status, res.statusText);
+    throw error;
+  }
+  return res.json();
+};
 
 interface TodoContextType {
   todos: Todo[];
@@ -101,6 +109,14 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: todosData, error: todoError } = useSWR<Todo[]>('/api/todos', fetcher);
   const { data: teamsData, error: teamError } = useSWR<Team[]>('/api/teams', fetcher);
   const { data: invitationsData, error: invError } = useSWR<Invitation[]>('/api/invitations', fetcher);
+
+  // Log errors for debugging
+  useEffect(() => {
+    if (catError) console.error('Categories fetch error:', catError);
+    if (todoError) console.error('Todos fetch error:', todoError);
+    if (teamError) console.error('Teams fetch error:', teamError);
+    if (invError) console.error('Invitations fetch error:', invError);
+  }, [catError, todoError, teamError, invError]);
 
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
   const todos = Array.isArray(todosData) ? todosData : [];
