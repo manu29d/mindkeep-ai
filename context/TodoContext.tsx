@@ -152,9 +152,14 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const interval = setInterval(() => {
       mutate('/api/todos', (currentTodos: Todo[] | undefined) => {
-        const todos = Array.isArray(currentTodos) ? currentTodos : [];
-        console.log('Timer tick - currentTodos:', todos.length);
-        return todos.map(todo => {
+        // Don't mutate if we don't have data yet
+        if (!currentTodos || !Array.isArray(currentTodos)) {
+          console.log('Timer tick - skipping, no data yet');
+          return currentTodos;
+        }
+        
+        console.log('Timer tick - currentTodos:', currentTodos.length);
+        return currentTodos.map(todo => {
           if (todo.timerState === TimerState.RUNNING) {
             return { ...todo, timeSpent: (todo.timeSpent || 0) + 1 };
           }
