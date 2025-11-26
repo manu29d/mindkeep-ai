@@ -105,10 +105,10 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [searchQuery, setSearchQuery] = useState('');
 
   // SWR Data Fetching
-  const { data: categoriesData, error: catError } = useSWR<Category[]>('/api/categories', fetcher);
-  const { data: todosData, error: todoError } = useSWR<Todo[]>('/api/todos', fetcher);
-  const { data: teamsData, error: teamError } = useSWR<Team[]>('/api/teams', fetcher);
-  const { data: invitationsData, error: invError } = useSWR<Invitation[]>('/api/invitations', fetcher);
+  const { data: categoriesData, error: catError } = useSWR<Category[]>('/api/categories', fetcher, { revalidateOnFocus: false });
+  const { data: todosData, error: todoError } = useSWR<Todo[]>('/api/todos', fetcher, { revalidateOnFocus: false });
+  const { data: teamsData, error: teamError } = useSWR<Team[]>('/api/teams', fetcher, { revalidateOnFocus: false });
+  const { data: invitationsData, error: invError } = useSWR<Invitation[]>('/api/invitations', fetcher, { revalidateOnFocus: false });
 
 
 
@@ -261,9 +261,19 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (!res.ok) throw new Error('Failed to create todo');
       
+      const newTodo = await res.json();
+      
+      // Optimistically add the new todo to the cache
+      mutate('/api/todos', (current: Todo[] | undefined) => {
+        if (!current) return [newTodo];
+        return [...current, newTodo];
+      }, false);
+      
+      // Then revalidate to ensure consistency
       mutate('/api/todos');
     } catch (error) {
       console.error(error);
+      mutate('/api/todos'); // Revalidate on error too
     }
   };
 
