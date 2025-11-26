@@ -127,6 +127,13 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const todos = Array.isArray(todosData) ? todosData : [];
   const teams = Array.isArray(teamsData) ? teamsData : [];
   const invitations = Array.isArray(invitationsData) ? invitationsData : [];
+  
+  console.log('Context arrays:', {
+    categoriesData: { isArray: Array.isArray(categoriesData), value: categoriesData },
+    todosData: { isArray: Array.isArray(todosData), value: todosData },
+    categories: categories.length,
+    todos: todos.length
+  });
 
   const isLoading = (!categoriesData && !catError) || (!todosData && !todoError) || (!teamsData && !teamError) || (!invitationsData && !invError);
 
@@ -146,6 +153,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const interval = setInterval(() => {
       mutate('/api/todos', (currentTodos: Todo[] | undefined) => {
         const todos = Array.isArray(currentTodos) ? currentTodos : [];
+        console.log('Timer tick - currentTodos:', todos.length);
         return todos.map(todo => {
           if (todo.timerState === TimerState.RUNNING) {
             return { ...todo, timeSpent: (todo.timeSpent || 0) + 1 };
