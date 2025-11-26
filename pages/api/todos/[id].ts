@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!todo) return res.status(404).json({ error: "Todo not found" });
   
   if (req.method === 'PUT') {
-    const { title, description, completed, deadline, categoryId, timerState, timeSpent, lastStartedAt } = req.body;
+    const { title, description, completed, deadline, categoryId, phaseId, timerState, timeSpent, lastStartedAt } = req.body;
     
     const data: Prisma.TodoUpdateInput = {};
     if (title !== undefined) data.title = title;
@@ -27,6 +27,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (deadline !== undefined) data.deadline = deadline ? new Date(deadline) : null;
     if (categoryId !== undefined) data.category = { connect: { id: categoryId } };
+    if (phaseId !== undefined) {
+        if (phaseId === null) {
+            data.phase = { disconnect: true };
+        } else {
+            data.phase = { connect: { id: phaseId } };
+        }
+    }
     
     if (timerState !== undefined) data.timerState = timerState;
     if (timeSpent !== undefined) data.timeSpent = timeSpent;

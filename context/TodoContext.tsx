@@ -244,7 +244,7 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const moveTodo = async (todoId: string, targetCategoryId: string, targetPhaseId?: string) => {
-    await updateTodo(todoId, { categoryId: targetCategoryId, phaseId: targetPhaseId });
+    await updateTodo(todoId, { categoryId: targetCategoryId, phaseId: targetPhaseId || null });
   };
 
   const toggleTimer = async (todoId: string) => {

@@ -39,18 +39,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Find user by email or name
   let userToAdd;
-  if (email) {
+  const input = (email || name || '').trim();
+  const isEmail = input.includes('@');
+
+  if (isEmail) {
     userToAdd = await prisma.user.findUnique({
-      where: { email: email.trim() }
+      where: { email: input }
     });
-  } else if (name) {
+  } else {
     userToAdd = await prisma.user.findFirst({
-      where: { name: name.trim() }
+      where: { name: input }
     });
   }
 
   if (!userToAdd) {
-    return res.status(404).json({ error: "User not found" });
+    // Create user if not found
+    try {
+      userToAdd = await prisma.user.create({
+        data: {
+          email: isEmail ? input : undefined,
+          name: isEmail ? input.split('@')[0] : input,
+        }
+      });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      return res.status(500).json({ error: "Failed to create user" });
+    }
   }
 
   // Check if already a member

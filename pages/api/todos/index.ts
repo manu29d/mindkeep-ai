@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const { title, categoryId, deadline, description } = req.body;
+    const { title, categoryId, deadline, description, phaseId } = req.body;
     if (!title || !categoryId) return res.status(400).json({ error: "Title and Category ID required" });
 
     const todo = await prisma.todo.create({
@@ -42,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         title,
         description,
         categoryId,
+        phaseId: phaseId || undefined,
         deadline: deadline ? new Date(deadline) : null,
         ownerId: session.user.id
       }

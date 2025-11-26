@@ -50,7 +50,7 @@ export interface Team {
 export interface Todo {
   id: string;
   categoryId: string;
-  phaseId?: string; // Linked to a Phase within the Category
+  phaseId?: string | null; // Linked to a Phase within the Category
   title: string;
   description?: string;
   completed: boolean;
