@@ -54,6 +54,10 @@ interface TodoContextType {
   // User Preferences
   geminiApiKey: string | null;
   setGeminiApiKey: (key: string | null) => void;
+
+  // Ordering
+  todoOrder: Record<string, string[]>;
+  reorderTodo: (containerId: string, newOrder: string[]) => void;
 }
 
 const TodoContext = createContext<TodoContextType | undefined>(undefined);
@@ -62,11 +66,21 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.BOARD);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [geminiApiKey, setGeminiApiKeyState] = useState<string | null>(null);
+  const [todoOrder, setTodoOrder] = useState<Record<string, string[]>>({});
 
   // Load API Key from LocalStorage
   useEffect(() => {
     const storedKey = localStorage.getItem('geminiApiKey');
     if (storedKey) setGeminiApiKeyState(storedKey);
+    
+    const storedOrder = localStorage.getItem('todoOrder');
+    if (storedOrder) {
+        try {
+            setTodoOrder(JSON.parse(storedOrder));
+        } catch (e) {
+            console.error("Failed to parse todo order", e);
+        }
+    }
   }, []);
 
   const setGeminiApiKey = (key: string | null) => {
@@ -207,6 +221,14 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, false);
   };
 
+  const reorderTodo = (containerId: string, newOrder: string[]) => {
+    setTodoOrder(prev => {
+        const next = { ...prev, [containerId]: newOrder };
+        localStorage.setItem('todoOrder', JSON.stringify(next));
+        return next;
+    });
+  };
+
   const addTodo = async (categoryId: string, title: string, phaseId?: string, description?: string) => {
     try {
       const category = categories.find(c => c.id === categoryId);
@@ -260,6 +282,35 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const moveTodo = async (todoId: string, targetCategoryId: string, targetPhaseId?: string) => {
+    const todo = todos.find(t => t.id === todoId);
+    if (todo) {
+        const oldContainerId = todo.phaseId || todo.categoryId;
+        const newContainerId = targetPhaseId || targetCategoryId;
+        
+        if (oldContainerId !== newContainerId) {
+             setTodoOrder(prev => {
+                 const oldOrder = prev[oldContainerId] || [];
+                 const newOrder = prev[newContainerId] || [];
+                 
+                 // Remove from old
+                 const nextOldOrder = oldOrder.filter(id => id !== todoId);
+                 
+                 // Add to new ONLY IF NOT PRESENT
+                 let nextNewOrder = newOrder;
+                 if (!newOrder.includes(todoId)) {
+                     nextNewOrder = [todoId, ...newOrder];
+                 }
+                 
+                 const next = {
+                     ...prev,
+                     [oldContainerId]: nextOldOrder,
+                     [newContainerId]: nextNewOrder 
+                 };
+                 localStorage.setItem('todoOrder', JSON.stringify(next));
+                 return next;
+             });
+        }
+    }
     await updateTodo(todoId, { categoryId: targetCategoryId, phaseId: targetPhaseId || null });
   };
 
@@ -360,7 +411,8 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addTodo, updateTodo, deleteTodo, moveTodo,
       toggleTimer, stopTimer, respondToInvitation, enrichTodoWithAI,
       addTeam, addTeamMember,
-      geminiApiKey, setGeminiApiKey
+      geminiApiKey, setGeminiApiKey,
+      todoOrder, reorderTodo
     }}>
       {children}
     </TodoContext.Provider>

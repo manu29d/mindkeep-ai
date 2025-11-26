@@ -14,6 +14,20 @@ const formatDate = (isoString?: string) => {
   return `${day} ${month}, ${year}`;
 };
 
+const getSortedTodos = (todos: Todo[], order: string[] | undefined) => {
+  if (!order || order.length === 0) return todos;
+  const todoMap = new Map(todos.map(t => [t.id, t]));
+  const sorted: Todo[] = [];
+  order.forEach(id => {
+    if (todoMap.has(id)) {
+      sorted.push(todoMap.get(id)!);
+      todoMap.delete(id);
+    }
+  });
+  Array.from(todoMap.values()).forEach(t => sorted.push(t));
+  return sorted;
+};
+
 const CategoryColumn: React.FC<{ 
   category: Category; 
   todos: Todo[]; 
@@ -21,7 +35,7 @@ const CategoryColumn: React.FC<{
   onTodoClick: (todo: Todo) => void;
   onEditCategory: (cat: Category) => void;
 }> = ({ category, todos, onAddTodo, onTodoClick, onEditCategory }) => {
-  const { moveTodo, updateCategory, deleteCategory, addPhase, teams } = useTodo();
+  const { moveTodo, updateCategory, deleteCategory, addPhase, teams, todoOrder, reorderTodo } = useTodo();
   const { canAccessPhases } = useFeatureGate();
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showPhaseInput, setShowPhaseInput] = useState(false);
@@ -41,6 +55,41 @@ const CategoryColumn: React.FC<{
       e.stopPropagation();
       moveTodo(todoId, category.id, targetPhaseId);
     }
+  };
+
+  const handleTodoDrop = (e: React.DragEvent, targetTodoId: string, containerId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const sourceTodoId = e.dataTransfer.getData('todoId');
+    
+    if (sourceTodoId && sourceTodoId !== targetTodoId) {
+        const currentOrder = todoOrder[containerId] || (containerId === category.id ? unphasedTodos : phasedGroups.find(g => g.phase.id === containerId)?.todos || []).map(t => t.id);
+        const sourceIndex = currentOrder.indexOf(sourceTodoId);
+        const targetIndex = currentOrder.indexOf(targetTodoId);
+        
+        if (sourceIndex === -1) {
+            // Moving from another list
+            const newOrder = [...currentOrder];
+            if (targetIndex !== -1) {
+                newOrder.splice(targetIndex, 0, sourceTodoId);
+            } else {
+                newOrder.push(sourceTodoId);
+            }
+            reorderTodo(containerId, newOrder);
+            moveTodo(sourceTodoId, category.id, containerId === category.id ? undefined : containerId);
+        } else {
+            // Reordering within same list
+            const newOrder = [...currentOrder];
+            const [moved] = newOrder.splice(sourceIndex, 1);
+            newOrder.splice(targetIndex, 0, moved);
+            reorderTodo(containerId, newOrder);
+        }
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, todo: Todo) => {
+      e.dataTransfer.setData('todoId', todo.id);
+      e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -77,10 +126,10 @@ const CategoryColumn: React.FC<{
   ];
 
   // Group todos by phase
-  const unphasedTodos = todos.filter(t => !t.phaseId);
+  const unphasedTodos = getSortedTodos(todos.filter(t => !t.phaseId), todoOrder[category.id]);
   const phasedGroups = (category.phases || []).map(phase => ({
     phase,
-    todos: todos.filter(t => t.phaseId === phase.id)
+    todos: getSortedTodos(todos.filter(t => t.phaseId === phase.id), todoOrder[phase.id])
   }));
 
   return (
@@ -210,7 +259,15 @@ const CategoryColumn: React.FC<{
         {/* Unphased Todos */}
         <div className="space-y-3 min-h-[40px]">
             {unphasedTodos.map(todo => (
-            <TodoItem key={todo.id} todo={todo} onClick={() => onTodoClick(todo)} />
+            <div 
+                key={todo.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, todo)}
+                onDrop={(e) => handleTodoDrop(e, todo.id, category.id)}
+                onDragOver={handleDragOver}
+            >
+                <TodoItem todo={todo} onClick={() => onTodoClick(todo)} />
+            </div>
             ))}
         </div>
 
@@ -253,7 +310,15 @@ const CategoryColumn: React.FC<{
                 </div>
                 <div className="space-y-3 min-h-[40px] bg-black/5 dark:bg-white/5 rounded-lg p-2">
                     {group.todos.map(todo => (
-                         <TodoItem key={todo.id} todo={todo} onClick={() => onTodoClick(todo)} />
+                         <div 
+                            key={todo.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, todo)}
+                            onDrop={(e) => handleTodoDrop(e, todo.id, group.phase.id)}
+                            onDragOver={handleDragOver}
+                        >
+                            <TodoItem todo={todo} onClick={() => onTodoClick(todo)} />
+                        </div>
                     ))}
                     {group.todos.length === 0 && (
                         <div className="text-xs text-center text-gray-400 py-2 italic">Drop tasks here</div>
