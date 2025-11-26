@@ -290,6 +290,13 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (!res.ok) throw new Error('Failed to update todo');
       
+      const updatedTodo = await res.json();
+      
+      // Update cache with the full response from server (includes populated assignees)
+      mutate('/api/todos', (todos: Todo[] | undefined) => 
+        todos?.map(t => t.id === id ? updatedTodo : t), false);
+      
+      // Also trigger a full revalidation to be safe
       mutate('/api/todos');
     } catch (error) {
       console.error(error);
@@ -299,14 +306,17 @@ export const TodoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteTodo = async (id: string) => {
     try {
+      // Optimistic delete
       mutate('/api/todos', (todos: Todo[] | undefined) => todos?.filter(t => t.id !== id), false);
 
       const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete todo');
       
-      mutate('/api/todos');
+      // Revalidate after successful delete
+      await mutate('/api/todos');
     } catch (error) {
       console.error(error);
+      // Revert optimistic update by revalidating
       mutate('/api/todos');
     }
   };
