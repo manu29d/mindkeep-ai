@@ -2,6 +2,9 @@
 
 A smart, Google Keep-inspired to-do application designed for both personal productivity and enterprise collaboration. MindKeep integrates Gemini AI to help organize tasks, break down complex projects, and provide insights into your productivity.
 
+<img width="1729" height="1293" alt="image" src="https://github.com/user-attachments/assets/26138ef3-8bea-45d0-b9ba-1b78ac3a15ce" />
+
+
 ## Features
 
 ### Core Productivity
@@ -11,11 +14,19 @@ A smart, Google Keep-inspired to-do application designed for both personal produ
 - **Deadlines**: Manage due dates for Categories, Phases (Enterprise), Tasks, and Sub-tasks.
 - **Phases**: Enterprise users can organize categories into specific phases (e.g., Planning, Execution) with their own deadlines.
 - **Dark Mode**: Fully supported system-wide dark mode.
+<img width="1729" height="1293" alt="image" src="https://github.com/user-attachments/assets/d972bc48-c641-4372-be9e-0a6a9da4723e" />
 
 ### AI Integration (Gemini)
 - **Auto-Breakdown**: One-click generation of sub-tasks for vague to-do items.
 - **Category Planning**: Generate a starter list of tasks for new projects based on a simple description.
 - **AI Chat Assistant**: Query your entire board using natural language (e.g., "What's due today?", "Summarize my work").
+
+<img width="1729" height="1293" alt="image" src="https://github.com/user-attachments/assets/1b172c58-ebcb-48f2-8838-87b729bb8f40" />
+<img width="672" height="670" alt="image" src="https://github.com/user-attachments/assets/bc711db9-6916-4f33-997e-5eb1df188c79" />
+<img width="896" height="600" alt="image" src="https://github.com/user-attachments/assets/6a4ec9f1-59a2-4232-a529-4372097ef4aa" />
+
+
+
 
 ### Enterprise & Collaboration
 - **Teams**: Create teams and manage members.
